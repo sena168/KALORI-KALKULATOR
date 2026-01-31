@@ -1,0 +1,125 @@
+import React, { useRef, useState, useEffect } from 'react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MenuItem } from '@/data/menu-data';
+import FoodCard from './FoodCard';
+import { cn } from '@/lib/utils';
+
+interface FoodMenuProps {
+  items: MenuItem[];
+  categoryId: string;
+}
+
+const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showTopButton, setShowTopButton] = useState(false);
+  const [showBottomButton, setShowBottomButton] = useState(false);
+
+  const checkScrollButtons = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setShowTopButton(scrollTop > 100);
+    setShowBottomButton(scrollTop < scrollHeight - clientHeight - 100);
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    checkScrollButtons();
+    const handle = () => checkScrollButtons();
+    container.addEventListener("scroll", handle);
+    window.addEventListener("resize", handle);
+
+    const resizeObserver = new ResizeObserver(handle);
+    resizeObserver.observe(container);
+
+    const timeoutId = window.setTimeout(handle, 300);
+
+    return () => {
+      container.removeEventListener("scroll", handle);
+      window.removeEventListener("resize", handle);
+      resizeObserver.disconnect();
+      window.clearTimeout(timeoutId);
+    };
+  }, [items]);
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  const scrollToBottom = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <p className="text-tv-subtitle">Belum ada menu</p>
+          <p className="text-tv-small mt-2">
+            Tambahkan gambar PNG ke folder /public/menu/{categoryId}/
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex-1 min-h-0">
+      {/* Scrollable Menu Container */}
+      <div
+        ref={scrollContainerRef}
+        className="h-full overflow-y-auto scrollbar-thin px-4 py-4 pb-32"
+      >
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 min-[900px]:grid-cols-2 gap-4 md:gap-5 lg:gap-6 pb-4">
+            {items.map((item) => (
+              <FoodCard key={item.id} item={item} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <Button
+        variant="secondary"
+        size="icon"
+        onClick={scrollToTop}
+        className={cn(
+          "absolute top-4 right-6 z-10 touch-target rounded-full shadow-lg transition-opacity duration-200",
+          showTopButton ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        title="Ke Atas"
+      >
+        <ChevronUp className="h-6 w-6" />
+      </Button>
+
+      <Button
+        variant="secondary"
+        size="icon"
+        onClick={scrollToBottom}
+        className={cn(
+          "absolute bottom-4 right-6 z-10 touch-target rounded-full shadow-lg transition-opacity duration-200",
+          showBottomButton ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        title="Ke Bawah"
+      >
+        <ChevronDown className="h-6 w-6" />
+      </Button>
+    </div>
+  );
+};
+
+export default FoodMenu;
