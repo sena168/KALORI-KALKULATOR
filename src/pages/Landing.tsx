@@ -44,29 +44,31 @@ const Landing: React.FC = () => {
         </p>
       </div>
 
-      {/* Login Buttons */}
+      {/* Guest Button */}
       <div className="flex flex-col items-center gap-4 w-full max-w-sm">
         <Button
           size="lg"
-          onClick={handleGoogleLogin}
-          className="w-full touch-target text-tv-body font-medium px-8 md:px-12 py-6 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Masuk dengan Google
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
           onClick={handleOpenApp}
-          className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full touch-target text-tv-body font-medium px-8 md:px-12 py-6 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
         >
           Buka Aplikasi
         </Button>
       </div>
 
       {/* Footer */}
-      <p className="text-tv-small text-muted-foreground mt-12">
-        Sekolah Santo Yusup
-      </p>
+      <div className="mt-12 flex flex-col items-center gap-3 w-full max-w-sm">
+        <p className="text-tv-small text-muted-foreground">
+          Sekolah Santo Yusup
+        </p>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={handleGoogleLogin}
+          className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          Login Admin
+        </Button>
+      </div>
     </div>
   );
 };
