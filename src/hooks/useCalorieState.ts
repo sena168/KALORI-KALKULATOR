@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { MenuItem } from '@/data/menu-data';
 import { useMenuData } from '@/hooks/useMenuData';
 
 export interface ItemQuantity {

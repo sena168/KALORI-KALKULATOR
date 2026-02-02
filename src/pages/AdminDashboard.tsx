@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import { MenuItemWithMeta, useMenuData } from "@/hooks/useMenuData";
-import { MenuCategory } from "@/data/menu-data";
 
 const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
@@ -14,7 +13,7 @@ type AdminTab = "overview" | "edit" | "tools";
 
 const AdminDashboard: React.FC = () => {
   const { user, loading } = useAuth();
-  const { categories, updateItem, setOrder, addItem } = useMenuData({ includeHidden: true });
+  const { categories, isLoading, updateItem, deleteItem, setOrder, addItem } = useMenuData({ includeHidden: true });
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id || "makanan-utama");
@@ -29,7 +28,7 @@ const AdminDashboard: React.FC = () => {
   const [imageError, setImageError] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
-  const [draftOrders, setDraftOrders] = useState<Partial<Record<MenuCategory["id"], string[]>>>({});
+  const [draftOrders, setDraftOrders] = useState<Record<string, string[]>>({});
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +77,7 @@ const AdminDashboard: React.FC = () => {
   }, [categories, activeCategory]);
 
   const activeItems = useMemo(() => {
-    const order = draftOrders[activeCategory as MenuCategory["id"]];
+    const order = draftOrders[activeCategory];
     if (!order || order.length === 0) return savedActiveItems;
     const byId = new Map(savedActiveItems.map((item) => [item.id, item]));
     const ordered = order.map((id) => byId.get(id)).filter(Boolean) as MenuItemWithMeta[];
@@ -87,7 +86,7 @@ const AdminDashboard: React.FC = () => {
   }, [draftOrders, savedActiveItems, activeCategory]);
 
   const isOrderDirty = useMemo(() => {
-    const draft = draftOrders[activeCategory as MenuCategory["id"]];
+    const draft = draftOrders[activeCategory];
     if (!draft) return false;
     const saved = savedActiveItems.map((item) => item.id);
     if (draft.length !== saved.length) return true;
@@ -146,7 +145,7 @@ const AdminDashboard: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (isAddMode) {
       const trimmedName = editName.trim();
       const calories = Number(editCalories);
@@ -166,27 +165,23 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      const categoryId = activeCategory as MenuCategory["id"];
-      const newId = `${categoryId}-custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const newItem: MenuItemWithMeta = {
-        id: newId,
+      const categoryId = activeCategory;
+      const created = await addItem({
         name: trimmedName,
         calories,
         imagePath: imageDataUrl,
-        category: categoryId,
         hidden: editHidden,
-      };
-
-      addItem(categoryId, newItem);
+        categoryId,
+      });
 
       const currentIds = activeItems.map((item) => item.id);
       const selectedIndex = selectedItemId ? currentIds.indexOf(selectedItemId) : -1;
       const insertIndex = selectedIndex >= 0 ? selectedIndex + 1 : 0;
       const nextOrder = [...currentIds];
-      nextOrder.splice(insertIndex, 0, newId);
-      setOrder(categoryId, nextOrder);
+      nextOrder.splice(insertIndex, 0, created.id);
+      await setOrder({ categoryId, order: nextOrder });
 
-      setSelectedItemId(newId);
+      setSelectedItemId(created.id);
       closeEdit();
       return;
     }
@@ -202,7 +197,7 @@ const AdminDashboard: React.FC = () => {
       name?: string;
       calories?: number;
       hidden?: boolean;
-      imageDataUrl?: string;
+      imagePath?: string;
     } = {
       name: editName.trim() || editingItem.name,
       calories,
@@ -210,10 +205,10 @@ const AdminDashboard: React.FC = () => {
     };
 
     if (imageDataUrl) {
-      patch.imageDataUrl = imageDataUrl;
+      patch.imagePath = imageDataUrl;
     }
 
-    updateItem(editingItem.id, patch);
+    await updateItem({ id: editingItem.id, patch });
 
     closeEdit();
   };
@@ -234,21 +229,29 @@ const AdminDashboard: React.FC = () => {
     next.splice(toIndex, 0, draggedId);
     setDraftOrders((prev) => ({
       ...prev,
-      [activeCategory as MenuCategory["id"]]: next,
+      [activeCategory]: next,
     }));
     setDraggedId(null);
     setDropTargetId(null);
   };
 
-  const handleSaveOrder = () => {
-    const draft = draftOrders[activeCategory as MenuCategory["id"]];
+  const handleSaveOrder = async () => {
+    const draft = draftOrders[activeCategory];
     if (!draft) return;
-    setOrder(activeCategory as MenuCategory["id"], draft);
+    await setOrder({ categoryId: activeCategory, order: draft });
     setDraftOrders((prev) => {
       const next = { ...prev };
-      delete next[activeCategory as MenuCategory["id"]];
+      delete next[activeCategory];
       return next;
     });
+  };
+
+  const handleDelete = async () => {
+    if (!editingItem) return;
+    const confirmed = window.confirm("Hapus menu ini?");
+    if (!confirmed) return;
+    await deleteItem(editingItem.id);
+    closeEdit();
   };
 
   if (loading) {
@@ -268,6 +271,21 @@ const AdminDashboard: React.FC = () => {
 
   if (!user) {
     return <Landing />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <img
+            src="/santo-yusup.png"
+            alt="Loading"
+            className="w-20 h-20 mx-auto rounded-xl animate-pulse mb-4"
+          />
+          <p className="text-muted-foreground text-tv-body">Memuat...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -532,9 +550,16 @@ const AdminDashboard: React.FC = () => {
               {imageError && <p className="text-sm text-destructive">{imageError}</p>}
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <Button variant="secondary" onClick={closeEdit}>Batal</Button>
-              <Button onClick={handleSave}>Simpan</Button>
+            <div className="mt-6 flex justify-between gap-3">
+              {!isAddMode && (
+                <Button variant="destructive" onClick={handleDelete}>
+                  Hapus
+                </Button>
+              )}
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={closeEdit}>Batal</Button>
+                <Button onClick={handleSave}>Simpan</Button>
+              </div>
             </div>
           </div>
         </div>

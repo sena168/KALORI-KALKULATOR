@@ -1,150 +1,128 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getMenuData, MenuCategory, MenuItem } from "@/data/menu-data";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { auth } from "@/integrations/firebase/client";
 
-type MenuOverride = {
-  name?: string;
-  calories?: number;
-  imageDataUrl?: string;
+export type MenuItemWithMeta = {
+  id: string;
+  name: string;
+  calories: number;
+  imagePath: string;
+  category: string;
   hidden?: boolean;
 };
 
-type AdminState = {
-  overrides: Record<string, MenuOverride>;
-  order: Partial<Record<MenuCategory["id"], string[]>>;
-  added: Partial<Record<MenuCategory["id"], MenuItemWithMeta[]>>;
-};
-
-export type MenuItemWithMeta = MenuItem & {
-  hidden?: boolean;
-  imageDataUrl?: string;
-};
-
-export type MenuCategoryWithMeta = Omit<MenuCategory, "items"> & {
+export type MenuCategoryWithMeta = {
+  id: string;
+  label: string;
   items: MenuItemWithMeta[];
 };
 
-const STORAGE_KEY = "admin-menu-overrides-v1";
-
-const emptyState: AdminState = { overrides: {}, order: {}, added: {} };
-
-const loadState = (): AdminState => {
-  if (typeof window === "undefined") return emptyState;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyState;
-    const parsed = JSON.parse(raw) as AdminState;
-    return {
-      overrides: parsed.overrides ?? {},
-      order: parsed.order ?? {},
-      added: parsed.added ?? {},
-    };
-  } catch {
-    return emptyState;
-  }
+const getAuthHeaders = async () => {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
 };
 
-const saveState = (state: AdminState) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        overrides: state.overrides,
-        order: state.order,
-        added: state.added,
-      }),
-    );
-  } catch {
-    // ignore storage failures
-  }
-};
-
-const applyState = (base: MenuCategory[], state: AdminState): MenuCategoryWithMeta[] => {
-  return base.map((category) => {
-    const addedItems = state.added[category.id] ?? [];
-    const items = [...category.items, ...addedItems].map((item) => {
-      const override = state.overrides[item.id];
-      const imagePath = override?.imageDataUrl ?? item.imagePath;
-      return {
-        ...item,
-        ...override,
-        imagePath,
-        hidden: override?.hidden ?? false,
-      };
-    });
-
-    const order = state.order[category.id];
-    if (!order || order.length === 0) {
-      return { ...category, items };
-    }
-
-    const byId = new Map(items.map((item) => [item.id, item]));
-    const ordered = order.map((id) => byId.get(id)).filter(Boolean) as MenuItemWithMeta[];
-    const remaining = items.filter((item) => !order.includes(item.id));
-    return {
-      ...category,
-      items: [...ordered, ...remaining],
-    };
+const fetchMenu = async (includeHidden: boolean) => {
+  const headers = includeHidden ? await getAuthHeaders() : {};
+  const res = await fetch(includeHidden ? "/api/admin/menu" : "/api/menu", {
+    headers,
   });
+  if (!res.ok) throw new Error("Failed to load menu");
+  const data = await res.json();
+  return data.categories as MenuCategoryWithMeta[];
 };
 
 export const useMenuData = (options?: { includeHidden?: boolean }) => {
-  const base = useMemo(() => getMenuData(), []);
-  const [state, setState] = useState<AdminState>(() => loadState());
+  const includeHidden = options?.includeHidden ?? false;
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  const query = useQuery({
+    queryKey: ["menu", includeHidden],
+    queryFn: () => fetchMenu(includeHidden),
+  });
 
-  const merged = useMemo(() => applyState(base, state), [base, state]);
-
-  const categories = useMemo(() => {
-    if (options?.includeHidden === false) {
-      return merged.map((category) => ({
-        ...category,
-        items: category.items.filter((item) => !item.hidden),
-      }));
-    }
-    return merged;
-  }, [merged, options?.includeHidden]);
-
-  const updateItem = useCallback((itemId: string, patch: MenuOverride) => {
-    setState((prev) => ({
-      ...prev,
-      overrides: {
-        ...prev.overrides,
-        [itemId]: {
-          ...prev.overrides[itemId],
-          ...patch,
+  const createMutation = useMutation({
+    mutationFn: async (payload: {
+      name: string;
+      calories: number;
+      imagePath: string;
+      hidden?: boolean;
+      categoryId: string;
+    }) => {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/admin/menu/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
         },
-      },
-    }));
-  }, []);
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to create item");
+      const data = await res.json();
+      return data.item as MenuItemWithMeta;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+  });
 
-  const setOrder = useCallback((categoryId: MenuCategory["id"], order: string[]) => {
-    setState((prev) => ({
-      ...prev,
-      order: {
-        ...prev.order,
-        [categoryId]: order,
-      },
-    }));
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      patch: { name?: string; calories?: number; imagePath?: string; hidden?: boolean };
+    }) => {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/admin/menu/items/${payload.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+        body: JSON.stringify(payload.patch),
+      });
+      if (!res.ok) throw new Error("Failed to update item");
+      const data = await res.json();
+      return data.item as MenuItemWithMeta;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+  });
 
-  const addItem = useCallback((categoryId: MenuCategory["id"], item: MenuItemWithMeta) => {
-    setState((prev) => ({
-      ...prev,
-      added: {
-        ...prev.added,
-        [categoryId]: [...(prev.added[categoryId] ?? []), item],
-      },
-    }));
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/admin/menu/items/${id}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (!res.ok) throw new Error("Failed to delete item");
+      return true;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+  });
+
+  const orderMutation = useMutation({
+    mutationFn: async (payload: { categoryId: string; order: string[] }) => {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/admin/menu/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update order");
+      return true;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+  });
 
   return {
-    categories,
-    updateItem,
-    setOrder,
-    addItem,
+    categories: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+    addItem: createMutation.mutateAsync,
+    updateItem: updateMutation.mutateAsync,
+    deleteItem: deleteMutation.mutateAsync,
+    setOrder: orderMutation.mutateAsync,
   };
 };

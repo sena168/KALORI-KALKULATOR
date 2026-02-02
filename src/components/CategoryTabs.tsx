@@ -1,9 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { MenuCategory } from '@/data/menu-data';
+import type { MenuCategoryWithMeta } from '@/hooks/useMenuData';
 
 interface CategoryTabsProps {
-  categories: MenuCategory[];
+  categories: MenuCategoryWithMeta[];
   activeCategory: string;
   onCategoryChange: (categoryId: string) => void;
 }

@@ -7,7 +7,7 @@ import BottomBar from '@/components/BottomBar';
 import { useMenuData } from '@/hooks/useMenuData';
 
 const Calculator: React.FC = () => {
-  const { categories: menuData } = useMenuData({ includeHidden: false });
+  const { categories: menuData, isLoading } = useMenuData({ includeHidden: false });
   const [activeCategory, setActiveCategory] = useState<string>(menuData[0]?.id || 'makanan-utama');
 
   useEffect(() => {
@@ -24,6 +24,21 @@ const Calculator: React.FC = () => {
     const category = menuData.find(cat => cat.id === activeCategory);
     return category?.items || [];
   }, [menuData, activeCategory]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <img
+            src="/santo-yusup.png"
+            alt="Loading"
+            className="w-20 h-20 mx-auto rounded-xl animate-pulse mb-4"
+          />
+          <p className="text-muted-foreground text-tv-body">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <CalorieProvider>

@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MenuItem } from '@/data/menu-data';
+import type { MenuItemWithMeta } from '@/hooks/useMenuData';
 import FoodCard from './FoodCard';
 import { cn } from '@/lib/utils';
 
 interface FoodMenuProps {
-  items: MenuItem[];
+  items: MenuItemWithMeta[];
   categoryId: string;
 }
 
@@ -69,7 +69,7 @@ const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId }) => {
         <div className="text-center text-muted-foreground">
           <p className="text-tv-subtitle">Belum ada menu</p>
           <p className="text-tv-small mt-2">
-            Tambahkan gambar PNG ke folder /public/menu/{categoryId}/
+            Tambahkan menu melalui Admin Dashboard
           </p>
         </div>
       </div>

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { MenuItem } from '@/data/menu-data';
+import type { MenuItemWithMeta } from '@/hooks/useMenuData';
 import { useCalories } from '@/contexts/CalorieContext';
 import QuantityControl from './QuantityControl';
 import { cn } from '@/lib/utils';
 
 interface FoodCardProps {
-  item: MenuItem;
+  item: MenuItemWithMeta;
 }
 
 const FoodCard: React.FC<FoodCardProps> = ({ item }) => {
