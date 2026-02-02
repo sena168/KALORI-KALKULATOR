@@ -7,7 +7,10 @@ const Landing: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     const { error } = await signInWithGoogle();
-    if (!error) return;
+    if (!error) {
+      window.location.assign("/admin");
+      return;
+    }
 
     if (error.message === "only-admin") {
       window.alert("Akun ini tidak memiliki akses admin.");

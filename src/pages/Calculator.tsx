@@ -1,14 +1,20 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { getMenuData } from '@/data/menu-data';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { CalorieProvider } from '@/contexts/CalorieContext';
 import Header from '@/components/Header';
 import CategoryTabs from '@/components/CategoryTabs';
 import FoodMenu from '@/components/FoodMenu';
 import BottomBar from '@/components/BottomBar';
+import { useMenuData } from '@/hooks/useMenuData';
 
 const Calculator: React.FC = () => {
-  const menuData = useMemo(() => getMenuData(), []);
+  const { categories: menuData } = useMenuData({ includeHidden: false });
   const [activeCategory, setActiveCategory] = useState<string>(menuData[0]?.id || 'makanan-utama');
+
+  useEffect(() => {
+    if (!menuData.find((category) => category.id === activeCategory) && menuData.length > 0) {
+      setActiveCategory(menuData[0].id);
+    }
+  }, [menuData, activeCategory]);
 
   const handleCategoryChange = useCallback((categoryId: string) => {
     setActiveCategory(categoryId);

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { getMenuData, MenuItem } from '@/data/menu-data';
+import { MenuItem } from '@/data/menu-data';
+import { useMenuData } from '@/hooks/useMenuData';
 
 export interface ItemQuantity {
   [itemId: string]: number;
@@ -18,7 +19,7 @@ export interface UseCalorieStateReturn {
 export const useCalorieState = (): UseCalorieStateReturn => {
   const [quantities, setQuantities] = useState<ItemQuantity>({});
   
-  const menuData = useMemo(() => getMenuData(), []);
+  const { categories: menuData } = useMenuData({ includeHidden: false });
   
   // Create a map of item IDs to their calorie values for quick lookup
   const calorieMap = useMemo(() => {
