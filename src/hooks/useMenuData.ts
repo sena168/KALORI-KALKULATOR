@@ -11,6 +11,7 @@ type MenuOverride = {
 type AdminState = {
   overrides: Record<string, MenuOverride>;
   order: Partial<Record<MenuCategory["id"], string[]>>;
+  added: Partial<Record<MenuCategory["id"], MenuItemWithMeta[]>>;
 };
 
 export type MenuItemWithMeta = MenuItem & {
@@ -24,7 +25,7 @@ export type MenuCategoryWithMeta = Omit<MenuCategory, "items"> & {
 
 const STORAGE_KEY = "admin-menu-overrides-v1";
 
-const emptyState: AdminState = { overrides: {}, order: {} };
+const emptyState: AdminState = { overrides: {}, order: {}, added: {} };
 
 const loadState = (): AdminState => {
   if (typeof window === "undefined") return emptyState;
@@ -35,6 +36,7 @@ const loadState = (): AdminState => {
     return {
       overrides: parsed.overrides ?? {},
       order: parsed.order ?? {},
+      added: parsed.added ?? {},
     };
   } catch {
     return emptyState;
@@ -49,6 +51,7 @@ const saveState = (state: AdminState) => {
       JSON.stringify({
         overrides: state.overrides,
         order: state.order,
+        added: state.added,
       }),
     );
   } catch {
@@ -58,7 +61,8 @@ const saveState = (state: AdminState) => {
 
 const applyState = (base: MenuCategory[], state: AdminState): MenuCategoryWithMeta[] => {
   return base.map((category) => {
-    const items = category.items.map((item) => {
+    const addedItems = state.added[category.id] ?? [];
+    const items = [...category.items, ...addedItems].map((item) => {
       const override = state.overrides[item.id];
       const imagePath = override?.imageDataUrl ?? item.imagePath;
       return {
@@ -127,9 +131,20 @@ export const useMenuData = (options?: { includeHidden?: boolean }) => {
     }));
   }, []);
 
+  const addItem = useCallback((categoryId: MenuCategory["id"], item: MenuItemWithMeta) => {
+    setState((prev) => ({
+      ...prev,
+      added: {
+        ...prev.added,
+        [categoryId]: [...(prev.added[categoryId] ?? []), item],
+      },
+    }));
+  }, []);
+
   return {
     categories,
     updateItem,
     setOrder,
+    addItem,
   };
 };

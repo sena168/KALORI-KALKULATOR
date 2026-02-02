@@ -14,12 +14,13 @@ type AdminTab = "overview" | "edit" | "tools";
 
 const AdminDashboard: React.FC = () => {
   const { user, loading } = useAuth();
-  const { categories, updateItem, setOrder } = useMenuData({ includeHidden: true });
+  const { categories, updateItem, setOrder, addItem } = useMenuData({ includeHidden: true });
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id || "makanan-utama");
 
   const [editingItem, setEditingItem] = useState<MenuItemWithMeta | null>(null);
+  const [isAddMode, setIsAddMode] = useState(false);
   const [editName, setEditName] = useState("");
   const [editCalories, setEditCalories] = useState("0");
   const [editHidden, setEditHidden] = useState(false);
@@ -29,6 +30,7 @@ const AdminDashboard: React.FC = () => {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [draftOrders, setDraftOrders] = useState<Partial<Record<MenuCategory["id"], string[]>>>({});
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!categories.find((cat) => cat.id === activeCategory) && categories.length > 0) {
@@ -94,6 +96,7 @@ const AdminDashboard: React.FC = () => {
 
   const openEdit = (item: MenuItemWithMeta) => {
     setEditingItem(item);
+    setIsAddMode(false);
     setEditName(item.name);
     setEditCalories(String(item.calories));
     setEditHidden(Boolean(item.hidden));
@@ -102,8 +105,20 @@ const AdminDashboard: React.FC = () => {
     setImageError(null);
   };
 
+  const openAdd = () => {
+    setEditingItem(null);
+    setIsAddMode(true);
+    setEditName("");
+    setEditCalories("");
+    setEditHidden(false);
+    setImagePreview("");
+    setImageDataUrl(undefined);
+    setImageError(null);
+  };
+
   const closeEdit = () => {
     setEditingItem(null);
+    setIsAddMode(false);
     setImageError(null);
   };
 
@@ -132,6 +147,50 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleSave = () => {
+    if (isAddMode) {
+      const trimmedName = editName.trim();
+      const calories = Number(editCalories);
+
+      if (!trimmedName) {
+        setImageError("Nama wajib diisi.");
+        return;
+      }
+
+      if (Number.isNaN(calories) || calories < 0) {
+        setImageError("Kalori harus angka 0 atau lebih.");
+        return;
+      }
+
+      if (!imageDataUrl) {
+        setImageError("Gambar wajib diunggah.");
+        return;
+      }
+
+      const categoryId = activeCategory as MenuCategory["id"];
+      const newId = `${categoryId}-custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const newItem: MenuItemWithMeta = {
+        id: newId,
+        name: trimmedName,
+        calories,
+        imagePath: imageDataUrl,
+        category: categoryId,
+        hidden: editHidden,
+      };
+
+      addItem(categoryId, newItem);
+
+      const currentIds = activeItems.map((item) => item.id);
+      const selectedIndex = selectedItemId ? currentIds.indexOf(selectedItemId) : -1;
+      const insertIndex = selectedIndex >= 0 ? selectedIndex + 1 : 0;
+      const nextOrder = [...currentIds];
+      nextOrder.splice(insertIndex, 0, newId);
+      setOrder(categoryId, nextOrder);
+
+      setSelectedItemId(newId);
+      closeEdit();
+      return;
+    }
+
     if (!editingItem) return;
     const calories = Number(editCalories);
     if (Number.isNaN(calories) || calories < 0) {
@@ -330,6 +389,7 @@ const AdminDashboard: React.FC = () => {
                     <div
                       key={item.id}
                       draggable
+                      onClick={() => setSelectedItemId(item.id)}
                       onDragStart={() => handleDragStart(item.id)}
                       onDragOver={(event) => {
                         event.preventDefault();
@@ -345,7 +405,7 @@ const AdminDashboard: React.FC = () => {
                         "bg-card rounded-xl p-4 md:p-6 lg:p-7 transition-all duration-200 min-h-[9.5rem] md:min-h-[11rem] lg:min-h-[12.5rem]",
                         "border border-border shadow-md hover:shadow-lg",
                         item.hidden && "border-dashed border-muted-foreground/60 opacity-70",
-                        dropTargetId === item.id && "border-t-4 border-yellow-400",
+                        (dropTargetId === item.id || selectedItemId === item.id) && "border-t-4 border-yellow-400",
                       )}
                     >
                       <div className="flex items-center gap-4 md:gap-6">
@@ -383,11 +443,16 @@ const AdminDashboard: React.FC = () => {
             </div>
             <Button
               size="lg"
-              onClick={handleSaveOrder}
-              disabled={!isOrderDirty}
+              onClick={() => {
+                if (isOrderDirty) {
+                  handleSaveOrder();
+                } else {
+                  openAdd();
+                }
+              }}
               className="fixed bottom-6 right-6 z-50 touch-target text-tv-body font-medium px-6 md:px-8 shadow-lg"
             >
-              Simpan
+              {isOrderDirty ? "Atur" : "Tambahkan"}
             </Button>
           </div>
         )}
@@ -399,13 +464,17 @@ const AdminDashboard: React.FC = () => {
         )}
       </main>
 
-      {editingItem && (
+      {(editingItem || isAddMode) && (
         <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-tv-subtitle font-semibold text-foreground">Edit Menu</h2>
-                <p className="text-tv-small text-muted-foreground">{editingItem.name}</p>
+                <h2 className="text-tv-subtitle font-semibold text-foreground">
+                  {isAddMode ? "Tambahkan Menu" : "Edit Menu"}
+                </h2>
+                {!isAddMode && editingItem && (
+                  <p className="text-tv-small text-muted-foreground">{editingItem.name}</p>
+                )}
               </div>
               <Button variant="ghost" onClick={closeEdit}>Tutup</Button>
             </div>
@@ -432,7 +501,9 @@ const AdminDashboard: React.FC = () => {
               </label>
 
               <label className="block">
-                <span className="text-tv-small text-muted-foreground">Gambar (PNG/JPG, max 1MB)</span>
+                <span className="text-tv-small text-muted-foreground">
+                  Gambar (PNG/JPG, max 1MB){isAddMode ? " - wajib" : ""}
+                </span>
                 <input
                   type="file"
                   accept="image/png,image/jpeg"
