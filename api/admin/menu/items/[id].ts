@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../_lib/prisma.js";
 import { requireAdmin } from "../../../_lib/auth.js";
 
@@ -26,6 +27,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof imagePath === "string" && imagePath.trim()) data.imagePath = imagePath.trim();
       if (typeof hidden === "boolean") data.hidden = hidden;
 
+      if (Object.keys(data).length === 0) {
+        res.status(400).json({ error: "No changes provided" });
+        return;
+      }
+
       const updated = await prisma.menuItem.update({
         where: { id: itemId },
         data,
@@ -41,6 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       });
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        res.status(404).json({ error: "Item not found" });
+        return;
+      }
       console.error(error);
       res.status(500).json({ error: "Failed to update menu item" });
     }

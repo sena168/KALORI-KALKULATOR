@@ -14,7 +14,10 @@ type AdminTab = "overview" | "edit" | "tools";
 
 const AdminDashboard: React.FC = () => {
   const { user, loading } = useAuth();
-  const { categories, isLoading, updateItem, deleteItem, setOrder, addItem } = useMenuData({ includeHidden: true });
+  const { categories, isLoading, updateItem, deleteItem, setOrder, addItem } = useMenuData({
+    includeHidden: true,
+    enabled: !loading && Boolean(user),
+  });
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id || "makanan-utama");
@@ -226,6 +229,7 @@ const AdminDashboard: React.FC = () => {
         else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan.";
         else if (err.status === 409) message = "Menu sudah ada.";
         else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
+        else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
         else if (err.message) message = err.message;
         toast.error(message);
       } finally {
@@ -275,8 +279,10 @@ const AdminDashboard: React.FC = () => {
       const err = error as Error & { status?: number };
       let message = "Gagal menyimpan perubahan.";
       if (err.status === 400) message = "Data tidak valid.";
-      else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan.";
+      else if (err.status === 404) message = "Menu tidak ditemukan. Silakan refresh.";
+      else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan. Silakan login ulang.";
       else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
+      else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
       else if (err.message) message = err.message;
       toast.error(message);
       setIsSaving(false);
@@ -350,8 +356,10 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       const err = error as Error & { status?: number };
       let message = "Gagal menghapus menu.";
-      if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan.";
+      if (err.status === 404) message = "Menu tidak ditemukan. Silakan refresh.";
+      if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan. Silakan login ulang.";
       else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
+      else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
       else if (err.message) message = err.message;
       toast.error(message);
     } finally {

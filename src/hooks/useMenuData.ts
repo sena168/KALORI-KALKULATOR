@@ -17,8 +17,10 @@ export type MenuCategoryWithMeta = {
 };
 
 const getAuthHeaders = async () => {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) return {};
+  if (!auth.currentUser) {
+    throw new Error("Not authenticated");
+  }
+  const token = await auth.currentUser.getIdToken();
   return { Authorization: `Bearer ${token}` };
 };
 
@@ -47,13 +49,14 @@ const createHttpError = async (res: Response, fallback: string) => {
   return error;
 };
 
-export const useMenuData = (options?: { includeHidden?: boolean }) => {
+export const useMenuData = (options?: { includeHidden?: boolean; enabled?: boolean }) => {
   const includeHidden = options?.includeHidden ?? false;
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ["menu", includeHidden],
     queryFn: () => fetchMenu(includeHidden),
+    enabled: options?.enabled ?? true,
   });
 
   if (query.error) {
