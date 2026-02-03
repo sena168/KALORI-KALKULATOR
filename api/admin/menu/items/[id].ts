@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../_lib/prisma.js";
 import { requireAdmin } from "../../../_lib/auth.js";
+import { uploadMenuImageIfNeeded } from "../../../_lib/cloudinary.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("menu items handler", req.method, req.url);
@@ -25,7 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof name === "string" && name.trim()) data.name = name.trim();
       const parsedCalories = Number(calories);
       if (Number.isFinite(parsedCalories) && parsedCalories >= 0) data.calories = parsedCalories;
-      if (typeof imagePath === "string" && imagePath.trim()) data.imagePath = imagePath.trim();
+      if (typeof imagePath === "string" && imagePath.trim()) {
+        data.imagePath = await uploadMenuImageIfNeeded(imagePath.trim());
+      }
       if (typeof hidden === "boolean") data.hidden = hidden;
 
       if (Object.keys(data).length === 0) {
