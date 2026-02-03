@@ -4,6 +4,7 @@ import { prisma } from "../../../_lib/prisma.js";
 import { requireAdmin } from "../../../_lib/auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log("menu items handler", req.method, req.url);
   const auth = await requireAdmin(req.headers.authorization);
   if (!auth.ok) {
     res.status(auth.status).json({ error: auth.message });
@@ -16,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (req.method === "PATCH") {
+  if (req.method === "PATCH" || req.method === "POST") {
     try {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body ?? {};
       const { name, calories, imagePath, hidden } = body;
@@ -65,6 +66,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(error);
       res.status(500).json({ error: "Failed to delete menu item" });
     }
+    return;
+  }
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
     return;
   }
 
