@@ -1,10 +1,13 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
+  const location = useLocation();
+  const showAdminButton = Boolean(user) && location.pathname !== "/admin";
 
   const handleSignOut = async () => {
     const confirmed = window.confirm("Keluar dari akun?");
@@ -37,7 +40,12 @@ const Header: React.FC = () => {
         </div>
 
         {/* User Actions */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
+          {showAdminButton && (
+            <Button asChild variant="secondary" className="touch-target">
+              <Link to="/admin">Admin Page</Link>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
