@@ -426,16 +426,6 @@ const AdminDashboard: React.FC = () => {
                 {tab === "overview" ? "Ringkasan" : tab === "edit" ? "Edit" : "Alat"}
               </button>
             ))}
-            <Link
-              to="/"
-              className={cn(
-                "flex-1 py-3 md:py-4 px-4 md:px-6 rounded-lg text-tv-body font-medium transition-all duration-200 touch-target text-center",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
-                "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-              )}
-            >
-              Kalkulator
-            </Link>
           </div>
         </div>
       </div>

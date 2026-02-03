@@ -8,6 +8,7 @@ const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const showAdminButton = Boolean(user) && location.pathname !== "/admin";
+  const showCalculatorButton = Boolean(user) && location.pathname === "/admin";
 
   const handleSignOut = async () => {
     const confirmed = window.confirm("Keluar dari akun?");
@@ -44,6 +45,11 @@ const Header: React.FC = () => {
           {showAdminButton && (
             <Button asChild variant="secondary" className="touch-target">
               <Link to="/admin">Admin Page</Link>
+            </Button>
+          )}
+          {showCalculatorButton && (
+            <Button asChild variant="secondary" className="touch-target">
+              <Link to="/">Kalkulator</Link>
             </Button>
           )}
           <Button
