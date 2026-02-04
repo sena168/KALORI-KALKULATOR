@@ -21,8 +21,9 @@ const Header: React.FC = () => {
 
   const isAdminPage = location.pathname === "/admin";
   const isCalculatorPage = location.pathname === "/";
+  const isHealthMetricsPage = location.pathname === "/health-metrics";
   const showAdminButton = Boolean(user) && isAdmin && !isAdminPage;
-  const showCalculatorButton = Boolean(user) && isAdmin && isAdminPage;
+  const showCalculatorButton = Boolean(user) && !isCalculatorPage;
   const showBmiButton = isCalculatorPage || isAdminPage;
 
   const handleSignOut = async () => {

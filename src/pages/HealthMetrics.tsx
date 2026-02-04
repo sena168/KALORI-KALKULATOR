@@ -42,6 +42,7 @@ const HealthMetricsContent: React.FC = () => {
   const [photoPreview, setPhotoPreview] = useState<string>("/noimage1.jpg");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [burnDuration, setBurnDuration] = useState("30");
   const [burnActivity, setBurnActivity] = useState(metActivities[0]);
@@ -66,21 +67,29 @@ const HealthMetricsContent: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  useEffect(() => {
-    if (!user || !hasHydrated) return;
-    const handle = window.setTimeout(() => {
-      void saveProfile({
-        age,
-        weight,
-        height,
-        gender,
-        username,
-        photoUrl: photoDataUrl ?? undefined,
-      });
-      if (photoDataUrl) setPhotoDataUrl(null);
-    }, 600);
-    return () => clearTimeout(handle);
-  }, [user, hasHydrated, age, weight, height, gender, username, photoDataUrl, saveProfile]);
+  const profileSnapshot = useMemo(
+    () => ({
+      age: profile?.age ?? 18,
+      weight: profile?.weight ?? 60,
+      height: profile?.height ?? 165,
+      gender: profile?.gender ?? "male",
+      username: profile?.username ?? "",
+      photoUrl: profile?.photoUrl ?? "",
+    }),
+    [profile],
+  );
+
+  const isDirty = useMemo(() => {
+    if (!hasHydrated) return false;
+    if (photoDataUrl) return true;
+    return (
+      age !== profileSnapshot.age ||
+      weight !== profileSnapshot.weight ||
+      height !== profileSnapshot.height ||
+      gender !== profileSnapshot.gender ||
+      username !== profileSnapshot.username
+    );
+  }, [age, weight, height, gender, username, photoDataUrl, profileSnapshot, hasHydrated]);
 
   const handlePhotoChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const file = event.target.files?.[0];
@@ -100,6 +109,27 @@ const HealthMetricsContent: React.FC = () => {
       setPhotoDataUrl(result);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user || isSaving || !isDirty) return;
+    setIsSaving(true);
+    try {
+      await saveProfile({
+        age,
+        weight,
+        height,
+        gender,
+        username,
+        photoUrl: photoDataUrl ?? undefined,
+      });
+      setPhotoDataUrl(null);
+    } catch (error) {
+      console.error("Profile save failed:", error);
+      window.alert("Gagal menyimpan profil.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const bmi = useMemo(() => {
@@ -312,6 +342,13 @@ const HealthMetricsContent: React.FC = () => {
                     />
                   </div>
                 </div>
+                <Button
+                  onClick={handleSaveProfile}
+                  disabled={!isDirty || isSaving}
+                  variant={isDirty ? "default" : "secondary"}
+                >
+                  {isSaving ? "Menyimpan..." : "Simpan Profil"}
+                </Button>
               </div>
             </div>
           </div>
