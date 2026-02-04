@@ -16,7 +16,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
-    "prisma:dedupe": "node ./scripts/dedupe.mjs"
+    "prisma:dedupe": "node ./scripts/dedupe.mjs",
+    "cloudinary:sync": "node ./scripts/cloudinary-sync.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
