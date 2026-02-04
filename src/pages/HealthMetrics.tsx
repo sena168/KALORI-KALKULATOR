@@ -33,7 +33,7 @@ const numberOrZero = (value: unknown) => (Number.isFinite(Number(value)) ? Numbe
 
 const HealthMetricsContent: React.FC = () => {
   const { user, loading, signInWithGoogle } = useAuth();
-  const { profile, isLoading: profileLoading, saveProfile } = useProfile(Boolean(user));
+  const { profile, isLoading: profileLoading, error: profileError, saveProfile } = useProfile(Boolean(user));
   const { age, weight, height, gender, setAge, setWeight, setHeight, setGender } = useHealthMetrics();
 
   const [activeTab, setActiveTab] = useState<TabKey>("bmi");
@@ -46,6 +46,7 @@ const HealthMetricsContent: React.FC = () => {
   const [burnDuration, setBurnDuration] = useState("30");
   const [burnActivity, setBurnActivity] = useState(metActivities[0]);
   const [burnList, setBurnList] = useState<Array<{ label: string; met: number; minutes: number }>>([]);
+  const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
     if (!profile || hasHydrated) return;
@@ -57,6 +58,13 @@ const HealthMetricsContent: React.FC = () => {
     if (profile.photoUrl) setPhotoPreview(profile.photoUrl);
     setHasHydrated(true);
   }, [profile, hasHydrated, setAge, setWeight, setHeight, setGender]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setForceReady(true);
+    }, 4000);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   useEffect(() => {
     if (!user || !hasHydrated) return;
@@ -166,7 +174,7 @@ const HealthMetricsContent: React.FC = () => {
     }));
   }, [age]);
 
-  if (loading || profileLoading) {
+  if ((loading || profileLoading) && !forceReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -215,6 +223,11 @@ const HealthMetricsContent: React.FC = () => {
       <main className="pt-24 md:pt-28 lg:pt-32 pb-10">
         <div className="container mx-auto px-4 space-y-6">
           <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+            {profileError && (
+              <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                Gagal memuat profil tersimpan. Anda tetap bisa memakai kalkulator.
+              </div>
+            )}
             <div className="flex flex-col lg:flex-row lg:items-start gap-6">
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <label className="block">
