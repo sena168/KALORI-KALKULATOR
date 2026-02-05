@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { HealthMetricsProvider, useHealthMetrics } from "@/contexts/HealthMetricsContext";
@@ -130,9 +131,10 @@ const HealthMetricsContent: React.FC = () => {
         photoUrl: photoDataUrl ?? undefined,
       });
       setPhotoDataUrl(null);
+      toast.success("Profil berhasil disimpan.");
     } catch (error) {
       console.error("Profile save failed:", error);
-      window.alert("Gagal menyimpan profil.");
+      toast.error("Gagal menyimpan profil.");
     } finally {
       setIsSaving(false);
     }
@@ -373,6 +375,15 @@ const HealthMetricsContent: React.FC = () => {
               </>
             )}
           </div>
+
+          {isSaving && (
+            <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center">
+              <div className="bg-card border border-border rounded-xl px-6 py-4 shadow-xl flex items-center gap-3">
+                <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <span className="text-tv-body text-foreground">Menyimpan profil...</span>
+              </div>
+            </div>
+          )}
 
           <div className="bg-card border border-border rounded-2xl p-4 shadow-md">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
