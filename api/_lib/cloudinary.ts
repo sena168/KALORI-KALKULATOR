@@ -21,7 +21,16 @@ const ensureConfigured = () => {
   configured = true;
 };
 
-export const uploadImageIfNeeded = async (imagePath: string, folder: string) => {
+type UploadOptions = {
+  publicId?: string;
+  overwrite?: boolean;
+};
+
+export const uploadImageIfNeeded = async (
+  imagePath: string,
+  folder: string,
+  options?: UploadOptions,
+) => {
   if (!imagePath) return imagePath;
   if (!imagePath.startsWith("data:")) return imagePath;
 
@@ -29,6 +38,8 @@ export const uploadImageIfNeeded = async (imagePath: string, folder: string) => 
   const result = await cloudinary.uploader.upload(imagePath, {
     folder,
     resource_type: "image",
+    public_id: options?.publicId,
+    overwrite: options?.overwrite ?? false,
   });
   return result.secure_url || result.url;
 };
@@ -51,6 +62,16 @@ export const deleteCloudinaryAssetIfNeeded = async (imagePath: string) => {
   const publicId = withoutVersion.replace(/\.[^/.]+$/, "");
   if (!publicId) return;
 
+  ensureConfigured();
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+  } catch (error) {
+    console.warn("Cloudinary delete failed:", error);
+  }
+};
+
+export const deleteCloudinaryByPublicId = async (publicId: string) => {
+  if (!publicId) return;
   ensureConfigured();
   try {
     await cloudinary.uploader.destroy(publicId, { resource_type: "image" });

@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { prisma } from "./_lib/prisma.js";
+import { Prisma } from "@prisma/client";
 import { isAdminUser, requireUser } from "./_lib/auth.js";
-import { uploadImageIfNeeded } from "./_lib/cloudinary.js";
+import { deleteCloudinaryByPublicId, uploadImageIfNeeded } from "./_lib/cloudinary.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET" && req.method !== "POST") {
@@ -29,6 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  let uploadedPublicId: string | null = null;
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body ?? {};
     const age = Number.isFinite(Number(body.age)) ? Number(body.age) : undefined;
@@ -36,10 +38,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const height = Number.isFinite(Number(body.height)) ? Number(body.height) : undefined;
     const gender = typeof body.gender === "string" ? body.gender : undefined;
     const username = typeof body.username === "string" ? body.username.trim() : undefined;
-    const photoUrl =
-      typeof body.photoUrl === "string" && body.photoUrl.trim()
-        ? await uploadImageIfNeeded(body.photoUrl.trim(), "users")
-        : undefined;
+
+    let photoUrl: string | undefined;
+    if (typeof body.photoUrl === "string" && body.photoUrl.trim()) {
+      const publicId = `users/${uid}`;
+      uploadedPublicId = publicId;
+      photoUrl = await uploadImageIfNeeded(body.photoUrl.trim(), "users", {
+        publicId,
+        overwrite: true,
+      });
+    }
 
     const profile = await prisma.userProfile.upsert({
       where: { uid },
@@ -71,6 +79,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error(error);
+    if (uploadedPublicId) {
+      await deleteCloudinaryByPublicId(uploadedPublicId);
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      res.status(500).json({ error: "UserProfile table missing. Run migrations." });
+      return;
+    }
     res.status(500).json({ error: "Failed to save profile" });
   }
 }
