@@ -177,6 +177,17 @@ const HealthMetricsContent: React.FC = () => {
     };
   }, []);
 
+  const bmiSegmentWidths = useMemo(
+    () => [
+      { key: "under", label: "Underweight < 18.5", color: "bg-blue-500", width: bmiSegment.under },
+      { key: "normal", label: "Normal 18.5 - 24.9", color: "bg-emerald-500", width: bmiSegment.normal },
+      { key: "over", label: "Overweight 25 - 29.9", color: "bg-amber-400", width: bmiSegment.over },
+      { key: "obese", label: "Obese 30 - 39.9", color: "bg-orange-500", width: bmiSegment.obese },
+      { key: "morbid", label: "Morbid ≥ 40", color: "bg-red-600", width: bmiSegment.morbid },
+    ],
+    [bmiSegment],
+  );
+
   const idealRange = useMemo(() => {
     if (!height) return { min: 0, max: 0 };
     const h = height / 100;
@@ -454,7 +465,7 @@ const HealthMetricsContent: React.FC = () => {
                   >
                     <span className="text-xs text-foreground font-medium">{bmi.toFixed(1)}</span>
                     <div
-                      className="h-0 w-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-white"
+                      className="h-0 w-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white"
                       aria-hidden="true"
                     />
                   </div>
@@ -469,27 +480,17 @@ const HealthMetricsContent: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span>Underweight &lt; 18.5</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>Normal 18.5 - 24.9</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />
-                  <span>Overweight 25 - 29.9</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-orange-500" />
-                  <span>Obese 30 - 39.9</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-red-600" />
-                  <span>Morbid &ge; 40</span>
-                </div>
+              <div className="flex text-xs text-muted-foreground">
+                {bmiSegmentWidths.map((segment) => (
+                  <div
+                    key={segment.key}
+                    className="flex items-center gap-2"
+                    style={{ width: `${segment.width}%` }}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${segment.color}`} />
+                    <span className="truncate">{segment.label}</span>
+                  </div>
+                ))}
               </div>
               <div>
                 <p className="text-tv-small text-muted-foreground">Ideal Weight Range</p>
