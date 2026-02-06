@@ -620,8 +620,11 @@ const HealthMetricsContent: React.FC = () => {
           )}
 
           {activeTab === "burned" && (
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4 relative">
+              <div>
+                <p className="text-tv-small text-muted-foreground">Physical Activity</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="block">
                   <span className="text-tv-small text-muted-foreground">Activity</span>
                   <select
@@ -649,26 +652,35 @@ const HealthMetricsContent: React.FC = () => {
                     className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
                   />
                 </label>
-                <div className="flex items-end">
-                  <Button onClick={addBurnActivity} className="w-full">
-                    Tambah Aktivitas
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-tv-small text-muted-foreground">Total Calories Burned</p>
-                <p className="text-tv-title font-bold text-primary">{Math.round(totalBurned)}</p>
               </div>
               <div className="space-y-2">
                 {burnList.map((entry, index) => (
                   <div key={`${entry.label}-${index}`} className="flex justify-between bg-muted/50 p-3 rounded-lg">
-                    <span>{entry.label} ({entry.minutes} min)</span>
+                    <span>
+                      {entry.label} <span className="text-muted-foreground">({entry.minutes} min)</span>
+                    </span>
                     <span>
                       {Math.round((entry.met * 3.5 * weight) / 200 * entry.minutes)} kcal
                     </span>
                   </div>
                 ))}
+                {burnList.length === 0 && (
+                  <div className="text-sm text-muted-foreground">Belum ada aktivitas ditambahkan.</div>
+                )}
               </div>
+              <div className="bg-muted rounded-lg p-4">
+                <p className="text-tv-small text-muted-foreground">Total Calories Burned</p>
+                <p className="text-tv-title font-bold text-primary">{Math.round(totalBurned)}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={addBurnActivity}
+                className="absolute -bottom-5 right-6 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center text-xl"
+                title="Tambah Aktivitas"
+              >
+                +
+              </button>
             </div>
           )}
 
