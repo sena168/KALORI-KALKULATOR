@@ -252,16 +252,17 @@ const HealthMetricsContent: React.FC = () => {
   const heartZones = useMemo(() => {
     const max = 220 - age;
     const ranges = [
-      { label: "Recovery", min: 0.5, max: 0.6 },
-      { label: "Fat Burn", min: 0.6, max: 0.7 },
-      { label: "Aerobic", min: 0.7, max: 0.8 },
-      { label: "Threshold", min: 0.8, max: 0.9 },
-      { label: "Maximum", min: 0.9, max: 1.0 },
+      { label: "Recovery", min: 0.5, max: 0.6, desc: "Improves overall health & recovery" },
+      { label: "Fat Burn", min: 0.6, max: 0.7, desc: "Improves basic endurance & fat burn" },
+      { label: "Aerobic", min: 0.7, max: 0.8, desc: "Improves aerobic capacity" },
+      { label: "Threshold", min: 0.8, max: 0.9, desc: "Increases performance threshold" },
+      { label: "Maximum", min: 0.9, max: 1.0, desc: "Develops maximum performance" },
     ];
     return ranges.map((zone) => ({
       label: zone.label,
       min: Math.round(max * zone.min),
       max: Math.round(max * zone.max),
+      desc: zone.desc,
     }));
   }, [age]);
 
@@ -686,17 +687,22 @@ const HealthMetricsContent: React.FC = () => {
 
           {activeTab === "heart" && (
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
-              <p className="text-tv-small text-muted-foreground">Maximum Heart Rate</p>
-              <p className="text-tv-title font-bold text-primary">{220 - age} BPM</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {heartZones.map((zone) => (
                   <div key={zone.label} className="bg-muted rounded-lg p-4">
-                    <p className="text-tv-small text-muted-foreground">{zone.label}</p>
-                    <p className="text-tv-body font-semibold">
-                      {zone.min} - {zone.max} BPM
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-tv-small text-muted-foreground">{zone.label}</p>
+                      <p className="text-tv-body font-semibold">
+                        {zone.min} - {zone.max} BPM
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">{zone.desc}</p>
                   </div>
                 ))}
+              </div>
+              <div className="bg-muted rounded-lg p-4">
+                <p className="text-tv-small text-muted-foreground">Maximum Heart Rate</p>
+                <p className="text-tv-title font-bold text-primary">{220 - age} BPM</p>
               </div>
             </div>
           )}
