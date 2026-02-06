@@ -677,7 +677,7 @@ const HealthMetricsContent: React.FC = () => {
               <button
                 type="button"
                 onClick={addBurnActivity}
-                className="absolute -bottom-5 right-6 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center text-xl"
+                className="fixed bottom-8 right-8 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center text-xl"
                 title="Tambah Aktivitas"
               >
                 +
