@@ -154,6 +154,23 @@ const HealthMetricsContent: React.FC = () => {
     return "Obese";
   }, [bmi]);
 
+  const bmiScaleMax = 40;
+  const bmiPercent = useMemo(() => {
+    if (!bmi) return 0;
+    const clamped = Math.min(Math.max(bmi, 0), bmiScaleMax);
+    return (clamped / bmiScaleMax) * 100;
+  }, [bmi]);
+
+  const bmiSegment = useMemo(() => {
+    const total = bmiScaleMax;
+    return {
+      under: (18.5 / total) * 100,
+      normal: ((24.9 - 18.5) / total) * 100,
+      over: ((29.9 - 25) / total) * 100,
+      obese: ((total - 30) / total) * 100,
+    };
+  }, []);
+
   const idealRange = useMemo(() => {
     if (!height) return { min: 0, max: 0 };
     const h = height / 100;
@@ -425,16 +442,23 @@ const HealthMetricsContent: React.FC = () => {
               </div>
               <div className="relative h-4 rounded-full bg-muted overflow-hidden">
                 <div className="flex h-full">
-                  <div className="flex-1 bg-blue-500" />
-                  <div className="flex-1 bg-emerald-500" />
-                  <div className="flex-1 bg-amber-400" />
-                  <div className="flex-1 bg-orange-500" />
+                  <div className="bg-blue-500" style={{ width: `${bmiSegment.under}%` }} />
+                  <div className="bg-emerald-500" style={{ width: `${bmiSegment.normal}%` }} />
+                  <div className="bg-amber-400" style={{ width: `${bmiSegment.over}%` }} />
+                  <div className="bg-orange-500" style={{ width: `${bmiSegment.obese}%` }} />
                 </div>
                 {bmi > 0 && (
-                  <div
-                    className="absolute top-0 h-full w-0.5 bg-white shadow"
-                    style={{ left: `${Math.min((bmi / 40) * 100, 100)}%` }}
-                  />
+                  <div className="absolute -top-6 left-0" style={{ width: `${bmiPercent}%` }}>
+                    <div className="absolute right-0 translate-x-1/2 flex flex-col items-center">
+                      <span className="text-xs text-foreground font-medium">
+                        {bmi.toFixed(1)}
+                      </span>
+                      <div
+                        className="h-0 w-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-white"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-muted-foreground">
