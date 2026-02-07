@@ -11,12 +11,18 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useProfile(Boolean(user));
   const [isGuest, setIsGuest] = useState(false);
+  const [splitViewEnabled, setSplitViewEnabled] = useState(false);
 
   useEffect(() => {
     try {
       setIsGuest(localStorage.getItem("guest-access") === "true");
     } catch {
       setIsGuest(false);
+    }
+    try {
+      setSplitViewEnabled(localStorage.getItem("splitview-enabled") === "true");
+    } catch {
+      setSplitViewEnabled(false);
     }
   }, []);
 
@@ -25,8 +31,11 @@ const Header: React.FC = () => {
   const isHealthMetricsPage = location.pathname === "/health-metrics";
   const isSplitViewPage = location.pathname === "/kalkulator-bmi";
   const showAdminButton = Boolean(user) && isAdmin && !isAdminPage;
-  const showCalculatorButton = Boolean(user) && !isCalculatorPage;
-  const showBmiButton = isCalculatorPage || isAdminPage;
+  const showSplitViewLink = isAdminPage && splitViewEnabled;
+  const showCalculatorButton =
+    Boolean(user) && !isCalculatorPage && !isSplitViewPage && !(isAdminPage && splitViewEnabled);
+  const showBmiButton =
+    (isCalculatorPage || isAdminPage) && !isSplitViewPage && !(isAdminPage && splitViewEnabled);
   const showSplitOption = Boolean(user) || isGuest;
 
   const handleSignOut = async () => {
@@ -59,8 +68,19 @@ const Header: React.FC = () => {
   };
 
   const handleSplitViewClick = async () => {
+    const setPreference = (enabled: boolean) => {
+      setSplitViewEnabled(enabled);
+      try {
+        localStorage.setItem("splitview-enabled", enabled ? "true" : "false");
+      } catch (error) {
+        console.warn("Split view preference save failed:", error);
+      }
+    };
+
     if (user) {
-      navigate(isSplitViewPage ? "/" : "/kalkulator-bmi");
+      const next = !splitViewEnabled;
+      setPreference(next);
+      navigate(next ? "/kalkulator-bmi" : "/");
       return;
     }
     if (!isGuest) return;
@@ -68,6 +88,7 @@ const Header: React.FC = () => {
     if (!confirmed) return;
     const { error } = await signInWithGoogle();
     if (!error) {
+      setPreference(true);
       navigate("/kalkulator-bmi");
       return;
     }
@@ -110,6 +131,11 @@ const Header: React.FC = () => {
           {showAdminButton && (
             <Button asChild variant="secondary" className="touch-target">
               <Link to="/admin">Admin Page</Link>
+            </Button>
+          )}
+          {showSplitViewLink && (
+            <Button asChild variant="secondary" className="touch-target">
+              <Link to="/kalkulator-bmi">Kalkulator / BMI</Link>
             </Button>
           )}
           {showCalculatorButton && (
@@ -168,7 +194,7 @@ const Header: React.FC = () => {
                     handleSplitViewClick();
                   }}
                 >
-                  {isSplitViewPage ? "Tampilan Normal" : "Tampilan Split"}
+                  {splitViewEnabled ? "Tampilan Normal" : "Tampilan Split"}
                 </DropdownMenu.Item>
               )}
               <div className="px-3 py-2 text-xs text-muted-foreground">Theme</div>
