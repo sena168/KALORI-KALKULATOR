@@ -32,7 +32,8 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
   return (
     <div 
       className={cn(
-        "bg-card rounded-xl p-4 md:p-6 lg:p-7 transition-all duration-200 min-h-[9.5rem] md:min-h-[11rem] lg:min-h-[12.5rem]",
+        "bg-card rounded-xl transition-all duration-200 min-h-[9.5rem] md:min-h-[11rem] lg:min-h-[12.5rem]",
+        embedded ? "p-3 md:p-4 lg:p-5" : "p-4 md:p-6 lg:p-7",
         "border border-border shadow-md hover:shadow-lg",
         hasQuantity && "ring-2 ring-primary/50 border-primary/30"
       )}
@@ -75,7 +76,10 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
       </div>
 
       {/* Tablet/TV Layout (Horizontal) */}
-      <div className="hidden md:flex items-center gap-4 md:gap-6">
+      <div className={cn(
+        "hidden md:flex items-center",
+        embedded ? "gap-3 md:gap-4" : "gap-4 md:gap-6"
+      )}>
         {/* Image - Left */}
         <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex-shrink-0 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
           {imageError ? (
