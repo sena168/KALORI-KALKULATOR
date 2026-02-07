@@ -12,6 +12,7 @@ const Header: React.FC = () => {
   const { profile, isAdmin } = useProfile(Boolean(user));
   const [isGuest, setIsGuest] = useState(false);
   const [splitViewEnabled, setSplitViewEnabled] = useState(false);
+  const [profileSetupVisible, setProfileSetupVisible] = useState(false);
 
   useEffect(() => {
     try {
@@ -23,6 +24,11 @@ const Header: React.FC = () => {
       setSplitViewEnabled(localStorage.getItem("splitview-enabled") === "true");
     } catch {
       setSplitViewEnabled(false);
+    }
+    try {
+      setProfileSetupVisible(localStorage.getItem("profile-setup-visible") === "true");
+    } catch {
+      setProfileSetupVisible(false);
     }
   }, []);
 
@@ -93,6 +99,17 @@ const Header: React.FC = () => {
       return;
     }
     window.alert("Gagal masuk dengan Google. Coba lagi.");
+  };
+
+  const handleProfileSetupToggle = () => {
+    const next = !profileSetupVisible;
+    setProfileSetupVisible(next);
+    try {
+      localStorage.setItem("profile-setup-visible", next ? "true" : "false");
+    } catch (error) {
+      console.warn("Profile setup preference save failed:", error);
+    }
+    window.dispatchEvent(new Event("profile-setup-toggle"));
   };
 
   const avatarSrc = profile?.photoUrl || "/kaloriico.png";
@@ -197,6 +214,15 @@ const Header: React.FC = () => {
                   {splitViewEnabled ? "Tampilan Normal" : "Tampilan Split"}
                 </DropdownMenu.Item>
               )}
+              <DropdownMenu.Item
+                className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleProfileSetupToggle();
+                }}
+              >
+                {profileSetupVisible ? "Sembunyikan Profile" : "Setup Profile"}
+              </DropdownMenu.Item>
               <div className="px-3 py-2 text-xs text-muted-foreground">Theme</div>
               <DropdownMenu.Item
                 className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"

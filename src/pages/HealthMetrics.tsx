@@ -48,6 +48,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const [burnDuration, setBurnDuration] = useState("30");
   const [burnActivity, setBurnActivity] = useState(metActivities[0]);
@@ -71,6 +72,25 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
       setHasHydrated(true);
     }
   }, [profileLoading, hasHydrated]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const loadSetting = () => {
+      try {
+        setShowProfileSetup(localStorage.getItem("profile-setup-visible") === "true");
+      } catch {
+        setShowProfileSetup(false);
+      }
+    };
+    loadSetting();
+    const handleToggle = () => loadSetting();
+    window.addEventListener("profile-setup-toggle", handleToggle);
+    window.addEventListener("storage", handleToggle);
+    return () => {
+      window.removeEventListener("profile-setup-toggle", handleToggle);
+      window.removeEventListener("storage", handleToggle);
+    };
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -336,122 +356,6 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
 
       <main className={embedded ? "h-full overflow-y-auto py-6" : "pt-24 md:pt-28 lg:pt-32 pb-10"}>
         <div className={`${embedded ? "px-4" : "container mx-auto px-4"} space-y-6`}>
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-            {profileLoading && (
-              <div className="space-y-4">
-                <div className="h-6 w-56 rounded-md bg-muted animate-pulse" />
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index} className="h-12 rounded-lg bg-muted animate-pulse" />
-                  ))}
-                </div>
-                <div className="h-20 rounded-lg bg-muted animate-pulse" />
-              </div>
-            )}
-            {!profileLoading && (
-              <>
-                {profileError ? (
-                  <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                    Profil tersimpan tidak bisa dimuat. Silakan isi ulang datanya.
-                  </div>
-                ) : !profile ? (
-                  <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                    Harap lengkapi data untuk menggunakan kalkulator.
-                  </div>
-                ) : null}
-                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <label className="block">
-                      <span className="text-tv-small text-muted-foreground">Usia</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={age}
-                        onChange={(event) => setAge(Number(event.target.value))}
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-tv-small text-muted-foreground">Berat (kg)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={weight}
-                        onChange={(event) => setWeight(Number(event.target.value))}
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-tv-small text-muted-foreground">Tinggi (cm)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={height}
-                        onChange={(event) => setHeight(Number(event.target.value))}
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-tv-small text-muted-foreground">Gender</span>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          type="button"
-                          variant={gender === "male" ? "default" : "secondary"}
-                          onClick={() => setGender("male")}
-                          className="flex-1"
-                        >
-                          Male
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={gender === "female" ? "default" : "secondary"}
-                          onClick={() => setGender("female")}
-                          className="flex-1"
-                        >
-                          Female
-                        </Button>
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="w-full lg:w-64 flex flex-col gap-4">
-                    <label className="block">
-                      <span className="text-tv-small text-muted-foreground">Username (opsional)</span>
-                      <input
-                        value={username}
-                        onChange={(event) => setUsername(event.target.value)}
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
-                      />
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                        <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-tv-small text-muted-foreground">
-                          Foto (PNG/JPG, max 1MB)
-                        </label>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg"
-                          onChange={handlePhotoChange}
-                          className="mt-2 w-full text-sm text-muted-foreground"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      onClick={handleSaveProfile}
-                      disabled={!isDirty || isSaving}
-                      variant={isDirty ? "default" : "secondary"}
-                    >
-                      {isSaving ? "Menyimpan..." : "Simpan Profil"}
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
           {isSaving && (
             <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center">
               <div className="bg-card border border-border rounded-xl px-6 py-4 shadow-xl flex items-center gap-3">
@@ -461,7 +365,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             </div>
           )}
 
-          <div className="bg-background border-b border-border rounded-2xl shadow-md">
+          <div className={embedded ? "bg-background border-b border-border" : "bg-background border-b border-border rounded-2xl shadow-md"}>
             <div className="px-4">
               <div className="flex gap-2 md:gap-4 py-3 md:py-4 flex-wrap">
               {[
@@ -488,6 +392,134 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
               </div>
             </div>
           </div>
+
+          {showProfileSetup && (
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+              {profileLoading && (
+                <div className="space-y-4">
+                  <div className="h-6 w-56 rounded-md bg-muted animate-pulse" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="h-12 rounded-lg bg-muted animate-pulse" />
+                    ))}
+                  </div>
+                  <div className="h-20 rounded-lg bg-muted animate-pulse" />
+                </div>
+              )}
+              {!profileLoading && (
+                <>
+                  {profileError ? (
+                    <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                      Profil tersimpan tidak bisa dimuat. Silakan isi ulang datanya.
+                    </div>
+                  ) : !profile ? (
+                    <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                      Harap lengkapi data untuk menggunakan kalkulator.
+                    </div>
+                  ) : null}
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                      <label className="block">
+                        <span className="text-tv-small text-muted-foreground">Usia</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={age}
+                          onChange={(event) => setAge(Number(event.target.value))}
+                          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-tv-small text-muted-foreground">Berat (kg)</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={weight}
+                          onChange={(event) => setWeight(Number(event.target.value))}
+                          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-tv-small text-muted-foreground">Tinggi (cm)</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={height}
+                          onChange={(event) => setHeight(Number(event.target.value))}
+                          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-tv-small text-muted-foreground">Gender</span>
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            type="button"
+                            variant={gender === "male" ? "default" : "secondary"}
+                            onClick={() => setGender("male")}
+                            className="flex-1"
+                          >
+                            Male
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={gender === "female" ? "default" : "secondary"}
+                            onClick={() => setGender("female")}
+                            className="flex-1"
+                          >
+                            Female
+                          </Button>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="w-full lg:w-64 flex flex-col gap-4">
+                      <label className="block">
+                        <span className="text-tv-small text-muted-foreground">Username (opsional)</span>
+                        <input
+                          value={username}
+                          onChange={(event) => setUsername(event.target.value)}
+                          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
+                        />
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                          <img
+                            src={photoPreview}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                            onError={(event) => {
+                              const target = event.currentTarget;
+                              if (target.dataset.fallback === "1") return;
+                              target.dataset.fallback = "1";
+                              target.src = "/noimage1.jpg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-tv-small text-muted-foreground">
+                            Foto (PNG/JPG, max 1MB)
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg"
+                            onChange={handlePhotoChange}
+                            className="mt-2 w-full text-sm text-muted-foreground"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleSaveProfile}
+                        disabled={!isDirty || isSaving}
+                        variant={isDirty ? "default" : "secondary"}
+                      >
+                        {isSaving ? "Menyimpan..." : "Simpan Profil"}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {activeTab === "bmi" && (
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
