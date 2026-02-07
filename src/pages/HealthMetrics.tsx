@@ -93,6 +93,18 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   }, []);
 
   useEffect(() => {
+    if (profileLoading) return;
+    if (!profile) {
+      setShowProfileSetup(true);
+      try {
+        localStorage.setItem("profile-setup-visible", "true");
+      } catch {
+        // ignore storage failures
+      }
+    }
+  }, [profile, profileLoading]);
+
+  useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setForceReady(true);
     }, 4000);
@@ -123,6 +135,14 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
     );
   }, [age, weight, height, gender, username, photoDataUrl, profileSnapshot, hasHydrated]);
 
+  const isProfileValid = useMemo(() => {
+    if (!age || age <= 0) return false;
+    if (!weight || weight <= 0) return false;
+    if (!height || height <= 0) return false;
+    if (gender !== "male" && gender !== "female") return false;
+    return true;
+  }, [age, weight, height, gender]);
+
   const handlePhotoChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -144,7 +164,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   };
 
   const handleSaveProfile = async () => {
-    if (!user || isSaving || !isDirty) return;
+    if (!user || isSaving || !isDirty || !isProfileValid) return;
     setIsSaving(true);
     try {
       await saveProfile({
@@ -507,8 +527,8 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                       </div>
                       <Button
                         onClick={handleSaveProfile}
-                        disabled={!isDirty || isSaving}
-                        variant={isDirty ? "default" : "secondary"}
+                        disabled={!isDirty || isSaving || !isProfileValid}
+                        variant={isDirty && isProfileValid ? "default" : "secondary"}
                       >
                         {isSaving ? "Menyimpan..." : "Simpan Profil"}
                       </Button>

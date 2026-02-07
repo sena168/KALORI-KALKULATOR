@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { toast } from "@/components/ui/sonner";
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -9,7 +10,7 @@ const Header: React.FC = () => {
   const { user, signOut, signInWithGoogle } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, isAdmin } = useProfile(Boolean(user));
+  const { profile, isAdmin, isLoading: profileLoading } = useProfile(Boolean(user));
   const [isGuest, setIsGuest] = useState(false);
   const [splitViewEnabled, setSplitViewEnabled] = useState(false);
   const [profileSetupVisible, setProfileSetupVisible] = useState(false);
@@ -31,6 +32,18 @@ const Header: React.FC = () => {
       setProfileSetupVisible(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user || profileLoading) return;
+    if (!profile) {
+      setProfileSetupVisible(true);
+      try {
+        localStorage.setItem("profile-setup-visible", "true");
+      } catch (error) {
+        console.warn("Profile setup preference save failed:", error);
+      }
+    }
+  }, [user, profile, profileLoading]);
 
   const isAdminPage = location.pathname === "/admin";
   const isCalculatorPage = location.pathname === "/";
@@ -102,6 +115,10 @@ const Header: React.FC = () => {
   };
 
   const handleProfileSetupToggle = () => {
+    if (user && !profile) {
+      toast("Harap lengkapi profil terlebih dahulu untuk menggunakan BMI index.");
+      return;
+    }
     const next = !profileSetupVisible;
     setProfileSetupVisible(next);
     try {
@@ -236,7 +253,22 @@ const Header: React.FC = () => {
                   handleProfileSetupToggle();
                 }}
               >
-                {profileSetupVisible ? "Sembunyikan Profile" : "Setup Profile"}
+                <div className="flex items-center justify-between gap-4">
+                  <span>Setup Profile</span>
+                  <span
+                    role="switch"
+                    aria-checked={profileSetupVisible}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      profileSetupVisible ? "bg-primary" : "bg-muted"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
+                        profileSetupVisible ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </span>
+                </div>
               </DropdownMenu.Item>
               <div className="px-3 py-2 text-xs text-muted-foreground">Theme</div>
               <DropdownMenu.Item
