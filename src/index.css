@@ -42,6 +42,41 @@
 }
 
 @layer base {
+  :root[data-theme="light"] {
+    --background: 0 0% 98%;
+    --foreground: 220 18% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 12%;
+
+    --primary: 38 92% 50%;
+    --primary-foreground: 220 18% 12%;
+
+    --secondary: 220 12% 92%;
+    --secondary-foreground: 220 18% 12%;
+
+    --muted: 220 12% 90%;
+    --muted-foreground: 220 12% 40%;
+
+    --accent: 38 80% 45%;
+    --accent-foreground: 220 18% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 12% 85%;
+    --input: 220 12% 85%;
+    --ring: 38 92% 50%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
   }

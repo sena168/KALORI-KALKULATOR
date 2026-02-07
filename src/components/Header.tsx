@@ -14,6 +14,7 @@ const Header: React.FC = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [splitViewEnabled, setSplitViewEnabled] = useState(false);
   const [profileSetupVisible, setProfileSetupVisible] = useState(false);
+  const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     try {
@@ -30,6 +31,14 @@ const Header: React.FC = () => {
       setProfileSetupVisible(localStorage.getItem("profile-setup-visible") === "true");
     } catch {
       setProfileSetupVisible(false);
+    }
+    try {
+      const storedTheme = localStorage.getItem("theme-mode");
+      const nextTheme = storedTheme === "light" ? "light" : "dark";
+      setThemeMode(nextTheme);
+      document.documentElement.setAttribute("data-theme", nextTheme);
+    } catch {
+      setThemeMode("dark");
     }
   }, []);
 
@@ -127,6 +136,17 @@ const Header: React.FC = () => {
       console.warn("Profile setup preference save failed:", error);
     }
     window.dispatchEvent(new Event("profile-setup-toggle"));
+  };
+
+  const handleThemeToggle = () => {
+    const next = themeMode === "dark" ? "light" : "dark";
+    setThemeMode(next);
+    try {
+      localStorage.setItem("theme-mode", next);
+    } catch (error) {
+      console.warn("Theme preference save failed:", error);
+    }
+    document.documentElement.setAttribute("data-theme", next);
   };
 
   const avatarSrc = profile?.photoUrl || "/kaloriico.png";
@@ -273,13 +293,27 @@ const Header: React.FC = () => {
               <div className="px-3 py-2 text-xs text-muted-foreground">Theme</div>
               <DropdownMenu.Item
                 className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleThemeToggle();
+                }}
               >
-                Dark
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-              >
-                Light
+                <div className="flex items-center justify-between gap-4">
+                  <span>{themeMode === "dark" ? "Dark" : "Light"}</span>
+                  <span
+                    role="switch"
+                    aria-checked={themeMode === "light"}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      themeMode === "light" ? "bg-primary" : "bg-muted"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
+                        themeMode === "light" ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </span>
+                </div>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-2 h-px bg-border" />
               <DropdownMenu.Item
