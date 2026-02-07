@@ -211,7 +211,22 @@ const Header: React.FC = () => {
                     handleSplitViewClick();
                   }}
                 >
-                  {splitViewEnabled ? "Tampilan Normal" : "Tampilan Split"}
+                  <div className="flex items-center justify-between gap-4">
+                    <span>Tampilan Split</span>
+                    <span
+                      role="switch"
+                      aria-checked={splitViewEnabled}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        splitViewEnabled ? "bg-primary" : "bg-muted"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
+                          splitViewEnabled ? "translate-x-5" : "translate-x-1"
+                        }`}
+                      />
+                    </span>
+                  </div>
                 </DropdownMenu.Item>
               )}
               <DropdownMenu.Item
