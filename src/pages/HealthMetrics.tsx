@@ -48,6 +48,7 @@ const HealthMetricsContent: React.FC = () => {
   const [burnDuration, setBurnDuration] = useState("30");
   const [burnActivity, setBurnActivity] = useState(metActivities[0]);
   const [burnList, setBurnList] = useState<Array<{ label: string; met: number; minutes: number }>>([]);
+  const [selectedBurnIndices, setSelectedBurnIndices] = useState<number[]>([]);
   const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
@@ -242,12 +243,26 @@ const HealthMetricsContent: React.FC = () => {
     setBurnList((prev) => [...prev, { label: burnActivity.label, met: burnActivity.met, minutes }]);
   };
 
+  const toggleBurnSelection = (index: number) => {
+    setSelectedBurnIndices((prev) =>
+      prev.includes(index) ? prev.filter((item) => item !== index) : [...prev, index],
+    );
+  };
+
+  const removeSelectedBurn = () => {
+    if (selectedBurnIndices.length === 0) return;
+    setBurnList((prev) => prev.filter((_, itemIndex) => !selectedBurnIndices.includes(itemIndex)));
+    setSelectedBurnIndices([]);
+  };
+
   const totalBurned = useMemo(() => {
     return burnList.reduce((sum, entry) => {
       const calories = (entry.met * 3.5 * weight) / 200 * entry.minutes;
       return sum + calories;
     }, 0);
   }, [burnList, weight]);
+
+  const hasBurnSelection = selectedBurnIndices.length > 0;
 
   const heartZones = useMemo(() => {
     const max = 220 - age;
@@ -655,16 +670,38 @@ const HealthMetricsContent: React.FC = () => {
                 </label>
               </div>
               <div className="space-y-2">
-                {burnList.map((entry, index) => (
-                  <div key={`${entry.label}-${index}`} className="flex justify-between bg-muted/50 p-3 rounded-lg">
-                    <span>
-                      {entry.label} <span className="text-muted-foreground">({entry.minutes} min)</span>
-                    </span>
-                    <span>
-                      {Math.round((entry.met * 3.5 * weight) / 200 * entry.minutes)} kcal
-                    </span>
-                  </div>
-                ))}
+                {burnList.map((entry, index) => {
+                  const isSelected = selectedBurnIndices.includes(index);
+                  return (
+                    <div
+                      key={`${entry.label}-${index}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                      onClick={() => toggleBurnSelection(index)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          toggleBurnSelection(index);
+                        }
+                      }}
+                      className={`flex items-center justify-between rounded-lg p-3 transition cursor-pointer ${
+                        isSelected
+                          ? "bg-muted ring-2 ring-primary/60"
+                          : "bg-muted/50 ring-1 ring-transparent hover:bg-muted/70 hover:ring-primary/30"
+                      }`}
+                    >
+                      <span>
+                        {entry.label} <span className="text-muted-foreground">({entry.minutes} min)</span>
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span>
+                          {Math.round((entry.met * 3.5 * weight) / 200 * entry.minutes)} kcal
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
                 {burnList.length === 0 && (
                   <div className="text-sm text-muted-foreground">Belum ada aktivitas ditambahkan.</div>
                 )}
@@ -676,11 +713,15 @@ const HealthMetricsContent: React.FC = () => {
 
               <button
                 type="button"
-                onClick={addBurnActivity}
-                className="fixed bottom-8 right-8 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center text-xl"
-                title="Tambah Aktivitas"
+                onClick={hasBurnSelection ? removeSelectedBurn : addBurnActivity}
+                className={`fixed bottom-8 right-8 rounded-full shadow-lg flex items-center justify-center transition ${
+                  hasBurnSelection
+                    ? "h-12 px-6 bg-rose-500/90 text-white hover:bg-rose-500"
+                    : "h-12 w-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xl"
+                }`}
+                title={hasBurnSelection ? "Hapus aktivitas terpilih" : "Tambah Aktivitas"}
               >
-                +
+                {hasBurnSelection ? "Hapus" : "+"}
               </button>
             </div>
           )}
