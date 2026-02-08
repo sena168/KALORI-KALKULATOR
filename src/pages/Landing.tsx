@@ -26,38 +26,53 @@ const Landing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0b0b] flex flex-col items-center justify-center p-6 relative">
-      {/* Logo and Branding */}
-      <div className="text-center mb-10 w-full max-w-md">
+    <div className="min-h-screen bg-[#0b0b0b] flex flex-col p-6 relative">
+      <div className="flex-1 w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
+        {/* LEFT: Content */}
+        <div className="flex flex-col items-start gap-6 md:gap-5">
+          <div className="space-y-3">
+            <h1 className="text-tv-title text-foreground">
+              Kalkulator Kalori
+            </h1>
+            <p className="text-tv-body text-muted-foreground max-w-md">
+              Hitung kalori makanan dan minuman dengan mudah dan cepat
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-4 w-full max-w-sm">
+            <Button
+              size="lg"
+              onClick={handleOpenApp}
+              className="w-full touch-target text-tv-body font-medium px-8 md:px-12 py-6 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Buka Aplikasi
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleGoogleLogin}
+              className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-primary text-primary-foreground"
+            >
+              Login Dengan Google
+            </Button>
+          </div>
+        </div>
+
+        {/* RIGHT: Hero */}
+        <div className="flex justify-center md:justify-end">
+          <img
+            src="/bmihero.png"
+            alt="BMI Hero"
+            className="w-full max-w-md md:max-w-sm lg:max-w-md h-auto max-h-[80vh] object-contain"
+          />
+        </div>
+      </div>
+
+      {/* Mobile order tweak */}
+      <div className="md:hidden order-3 mt-6 flex justify-center">
         <img
           src="/bmihero.png"
           alt="BMI Hero"
-          className="w-full h-auto mx-auto shadow-xl mb-8 object-contain"
+          className="w-full max-w-xs h-auto max-h-[40vh] object-contain"
         />
-        <h1 className="text-tv-title text-foreground mb-4">
-          Kalkulator Kalori
-        </h1>
-        <p className="text-tv-body text-muted-foreground">
-          Hitung kalori makanan dan minuman dengan mudah dan cepat
-        </p>
-      </div>
-
-      {/* Login Button Container */}
-      <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-        <Button
-          size="lg"
-          onClick={handleOpenApp}
-          className="w-full touch-target text-tv-body font-medium px-8 md:px-12 py-6 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Buka Aplikasi
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleGoogleLogin}
-          className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-primary text-primary-foreground"
-        >
-          Login Dengan Google
-        </Button>
       </div>
 
       {/* Footer Branding */}
