@@ -26,23 +26,23 @@ const Landing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0b0b] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#0b0b0b] flex flex-col items-center justify-center p-6 relative">
       {/* Logo and Branding */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-10 w-full max-w-md">
         <img
           src="/bmihero.png"
           alt="BMI Hero"
-          className="w-full max-w-md h-auto mx-auto shadow-xl mb-8 object-contain"
+          className="w-full h-auto mx-auto shadow-xl mb-8 object-contain"
         />
         <h1 className="text-tv-title text-foreground mb-4">
           Kalkulator Kalori
         </h1>
-        <p className="text-tv-body text-muted-foreground max-w-md mx-auto">
+        <p className="text-tv-body text-muted-foreground">
           Hitung kalori makanan dan minuman dengan mudah dan cepat
         </p>
       </div>
 
-      {/* Guest Button */}
+      {/* Login Button Container */}
       <div className="flex flex-col items-center gap-4 w-full max-w-sm">
         <Button
           size="lg"
@@ -51,21 +51,20 @@ const Landing: React.FC = () => {
         >
           Buka Aplikasi
         </Button>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-12 flex flex-col items-center gap-3 w-full max-w-sm">
-        <p className="text-tv-small text-muted-foreground">
-          Prompt One Visuals
-        </p>
         <Button
           size="sm"
-          variant="secondary"
           onClick={handleGoogleLogin}
-          className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-primary text-primary-foreground"
         >
           Login Dengan Google
         </Button>
+      </div>
+
+      {/* Footer Branding */}
+      <div className="absolute bottom-6 inset-x-0 flex justify-center">
+        <p className="text-xs text-muted-foreground tracking-[0.2em]">
+          [PROMPT ONE VISUALS]
+        </p>
       </div>
     </div>
   );
