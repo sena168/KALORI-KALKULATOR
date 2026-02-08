@@ -149,7 +149,7 @@ const Header: React.FC = () => {
     document.documentElement.setAttribute("data-theme", next);
   };
 
-  const avatarSrc = profile?.photoUrl || "/kaloriico.png";
+  const avatarSrc = profile?.photoUrl || "/defaultico.png";
   const displayLabel =
     (isGuest && !user)
       ? "Guest"
@@ -178,7 +178,7 @@ const Header: React.FC = () => {
           <img 
             src="/bmicalico1.png" 
             alt="Logo" 
-            className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-lg object-cover"
+            className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 object-contain"
           />
           <h1 className="text-tv-title text-foreground font-bold">
             Kalkulator Kalori

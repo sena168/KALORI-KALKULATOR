@@ -30,9 +30,9 @@ const Landing: React.FC = () => {
       {/* Logo and Branding */}
       <div className="text-center mb-12">
         <img
-          src="/bmicalico1.png"
-          alt="Logo Sekolah Santo Yusup"
-          className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mx-auto rounded-2xl shadow-xl mb-8"
+          src="/bmihero.png"
+          alt="BMI Hero"
+          className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mx-auto shadow-xl mb-8 object-contain"
         />
         <h1 className="text-tv-title text-foreground mb-4">
           Kalkulator Kalori
@@ -56,7 +56,7 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <div className="mt-12 flex flex-col items-center gap-3 w-full max-w-sm">
         <p className="text-tv-small text-muted-foreground">
-          Sekolah Santo Yusup
+          Prompt One Visuals
         </p>
         <Button
           size="sm"

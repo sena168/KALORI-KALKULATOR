@@ -334,7 +334,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
           <img
             src="/bmicalico1.png"
             alt="Loading"
-            className="w-20 h-20 mx-auto rounded-xl animate-pulse mb-4"
+            className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
           <p className="text-muted-foreground text-tv-body">Memuat... (Health Metrics)</p>
         </div>
