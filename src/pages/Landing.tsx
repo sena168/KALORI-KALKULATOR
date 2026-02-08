@@ -26,13 +26,13 @@ const Landing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#0b0b0b] flex flex-col items-center justify-center p-6">
       {/* Logo and Branding */}
       <div className="text-center mb-12">
         <img
           src="/bmihero.png"
           alt="BMI Hero"
-          className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mx-auto shadow-xl mb-8 object-contain"
+          className="w-full max-w-md h-auto mx-auto shadow-xl mb-8 object-contain"
         />
         <h1 className="text-tv-title text-foreground mb-4">
           Kalkulator Kalori
