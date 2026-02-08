@@ -30,7 +30,7 @@ const Landing: React.FC = () => {
       {/* Logo and Branding */}
       <div className="text-center mb-12">
         <img
-          src="/santo-yusup.png"
+          src="/bmicalico1.png"
           alt="Logo Sekolah Santo Yusup"
           className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mx-auto rounded-2xl shadow-xl mb-8"
         />

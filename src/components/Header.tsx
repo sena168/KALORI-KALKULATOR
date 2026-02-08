@@ -176,7 +176,7 @@ const Header: React.FC = () => {
         {/* Logo and App Name */}
         <div className="flex items-center gap-3 md:gap-4">
           <img 
-            src="/santo-yusup.png" 
+            src="/bmicalico1.png" 
             alt="Logo" 
             className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-lg object-cover"
           />

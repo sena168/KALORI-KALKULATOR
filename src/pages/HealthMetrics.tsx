@@ -332,7 +332,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
       <div className={`${pageHeightClass} bg-background flex items-center justify-center`}>
         <div className="text-center">
           <img
-            src="/santo-yusup.png"
+            src="/bmicalico1.png"
             alt="Loading"
             className="w-20 h-20 mx-auto rounded-xl animate-pulse mb-4"
           />
