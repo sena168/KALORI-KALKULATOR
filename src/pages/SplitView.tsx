@@ -2,8 +2,10 @@ import React from "react";
 import Header from "@/components/Header";
 import { CalculatorContent } from "@/pages/Calculator";
 import { HealthMetricsEmbedded } from "@/pages/HealthMetrics";
+import { useTranslation } from "react-i18next";
 
 const SplitView: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -19,10 +21,10 @@ const SplitView: React.FC = () => {
           </div>
           <div className="xl:hidden bg-card border border-border rounded-2xl p-6 text-center">
             <p className="text-tv-body text-muted-foreground">
-              Tampilan split hanya tersedia di layar besar.
+              {t("splitView.noticeTitle")}
             </p>
             <p className="text-tv-small text-muted-foreground mt-2">
-              Gunakan Kalkulator atau BMI Index secara terpisah.
+              {t("splitView.noticeBody")}
             </p>
           </div>
         </div>

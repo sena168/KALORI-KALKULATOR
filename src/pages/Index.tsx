@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import Landing from './Landing';
 import Calculator from './Calculator';
+import { useTranslation } from "react-i18next";
 
 const Index: React.FC = () => {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const [forceReady, setForceReady] = useState(false);
   const hasGuestAccess =
@@ -25,10 +27,10 @@ const Index: React.FC = () => {
         <div className="text-center">
           <img
             src="/bmicalico1.png"
-            alt="Loading"
+            alt={t("loading.index")}
             className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
-          <p className="text-muted-foreground text-tv-body">Memuat... (Index)</p>
+          <p className="text-muted-foreground text-tv-body">{t("loading.index")}</p>
         </div>
       </div>
     );

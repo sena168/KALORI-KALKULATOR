@@ -3,10 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { toast } from "@/components/ui/sonner";
+import { useTranslation } from "react-i18next";
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
 const Header: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { user, signOut, signInWithGoogle } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ const Header: React.FC = () => {
   const showSplitOption = Boolean(user) || isGuest;
 
   const handleSignOut = async () => {
-    const confirmed = window.confirm("Keluar dari akun?");
+    const confirmed = window.confirm(t("actions.confirmSignOut"));
     if (!confirmed) return;
     try {
       await signOut();
@@ -85,14 +87,14 @@ const Header: React.FC = () => {
     if (user) return;
     if (!isGuest) return;
     event.preventDefault();
-    const confirmed = window.confirm("BMI Index memerlukan login. Lanjutkan login?");
+    const confirmed = window.confirm(t("header.bmiLoginRequiredConfirm"));
     if (!confirmed) return;
     const { error } = await signInWithGoogle();
     if (!error) {
       window.location.assign("/health-metrics");
       return;
     }
-    window.alert("Gagal masuk dengan Google. Coba lagi.");
+    window.alert(t("header.googleLoginFailed"));
   };
 
   const handleSplitViewClick = async () => {
@@ -112,7 +114,7 @@ const Header: React.FC = () => {
       return;
     }
     if (!isGuest) return;
-    const confirmed = window.confirm("BMI Index memerlukan login. Lanjutkan login?");
+    const confirmed = window.confirm(t("header.bmiLoginRequiredConfirm"));
     if (!confirmed) return;
     const { error } = await signInWithGoogle();
     if (!error) {
@@ -120,12 +122,12 @@ const Header: React.FC = () => {
       navigate("/kalkulator-bmi");
       return;
     }
-    window.alert("Gagal masuk dengan Google. Coba lagi.");
+    window.alert(t("header.googleLoginFailed"));
   };
 
   const handleProfileSetupToggle = () => {
     if (user && !profile) {
-      toast("Harap lengkapi profil terlebih dahulu untuk menggunakan BMI index.");
+      toast(t("header.profileSetupToast"));
       return;
     }
     const next = !profileSetupVisible;
@@ -149,16 +151,27 @@ const Header: React.FC = () => {
     document.documentElement.setAttribute("data-theme", next);
   };
 
+  const handleLanguageToggle = () => {
+    const next = i18n.language === "en" ? "id" : "en";
+    i18n.changeLanguage(next);
+    try {
+      localStorage.setItem("language", next);
+    } catch (error) {
+      console.warn("Language preference save failed:", error);
+    }
+    document.documentElement.setAttribute("lang", next);
+  };
+
   const avatarSrc = profile?.photoUrl || "/defaultico.png";
   const displayLabel =
     (isGuest && !user)
-      ? "Guest"
+      ? t("header.guestLabel")
       : profile?.username ||
         user?.displayName ||
         user?.email?.split("@")[0] ||
         "";
   const initials = (() => {
-    if (isGuest && !user) return "Guest";
+    if (isGuest && !user) return t("header.guestLabel");
     const trimmed = displayLabel.trim();
     if (!trimmed) return "U";
     const parts = trimmed.split(/\s+/).filter(Boolean);
@@ -177,11 +190,11 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3 md:gap-4">
           <img 
             src="/bmicalico1.png" 
-            alt="Logo" 
+            alt={t("app.title")} 
             className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 object-contain"
           />
           <h1 className="text-tv-title text-foreground font-bold">
-            Kalkulator Kalori
+            {t("app.title")}
           </h1>
         </div>
 
@@ -189,27 +202,27 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3">
           {showAdminButton && (
             <Button asChild variant="secondary" className="touch-target">
-              <Link to="/admin">Admin Page</Link>
+              <Link to="/admin">{t("header.adminPage")}</Link>
             </Button>
           )}
           {showSplitViewLink && (
             <Button asChild variant="secondary" className="touch-target">
-              <Link to="/kalkulator-bmi">Kalkulator / BMI</Link>
+              <Link to="/kalkulator-bmi">{t("header.splitLink")}</Link>
             </Button>
           )}
           {showCalculatorButton && (
             <Button asChild variant="secondary" className="touch-target">
-              <Link to="/">Kalkulator</Link>
+              <Link to="/">{t("header.calculator")}</Link>
             </Button>
           )}
           {showBmiButton && (user || isGuest) && (
             user ? (
               <Button asChild variant="secondary" className="touch-target">
-                <Link to="/health-metrics">BMI Index</Link>
+                <Link to="/health-metrics">{t("header.bmiIndex")}</Link>
               </Button>
             ) : (
               <Button variant="secondary" className="touch-target" onClick={handleBmiClick}>
-                BMI Index
+                {t("header.bmiIndex")}
               </Button>
             )
           )}
@@ -222,11 +235,11 @@ const Header: React.FC = () => {
               <button
                 type="button"
                 className="h-10 w-10 md:h-11 md:w-11 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center hover:ring-2 hover:ring-primary/40 transition"
-                title="Profil"
+                title={t("header.profileTitle")}
               >
                 <img
                   src={avatarSrc}
-                  alt="Profile"
+                  alt={t("header.profileTitle")}
                   className="h-full w-full object-cover"
                   onError={(event) => {
                     const target = event.currentTarget;
@@ -243,7 +256,7 @@ const Header: React.FC = () => {
               className="z-[70] min-w-[180px] rounded-lg border border-border bg-card shadow-lg p-2"
             >
               <div className="px-3 py-2 text-sm text-foreground">
-                {displayLabel || "User"}
+                {displayLabel || t("header.userFallback")}
               </div>
               {showSplitOption && (
                 <DropdownMenu.Item
@@ -254,7 +267,7 @@ const Header: React.FC = () => {
                   }}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <span>Tampilan Split</span>
+                    <span>{t("header.splitView")}</span>
                     <span
                       role="switch"
                       aria-checked={splitViewEnabled}
@@ -284,7 +297,7 @@ const Header: React.FC = () => {
                 }}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <span>Setup Profile</span>
+                  <span>{t("header.setupProfile")}</span>
                   <span
                     role="switch"
                     aria-checked={profileSetupVisible}
@@ -300,7 +313,7 @@ const Header: React.FC = () => {
                   </span>
                 </div>
               </DropdownMenu.Item>
-              <div className="px-3 py-2 text-xs text-muted-foreground">Theme</div>
+              <div className="px-3 py-2 text-xs text-muted-foreground">{t("header.theme")}</div>
               <DropdownMenu.Item
                 className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
                 onSelect={(event) => {
@@ -309,7 +322,7 @@ const Header: React.FC = () => {
                 }}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <span>{themeMode === "dark" ? "Dark" : "Light"}</span>
+                  <span>{themeMode === "dark" ? t("header.dark") : t("header.light")}</span>
                   <span
                     role="switch"
                     aria-checked={themeMode === "light"}
@@ -325,6 +338,35 @@ const Header: React.FC = () => {
                   </span>
                 </div>
               </DropdownMenu.Item>
+              <div className="px-3 py-2 text-xs text-muted-foreground">{t("header.language")}</div>
+              <DropdownMenu.Item
+                className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleLanguageToggle();
+                }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span>
+                    {i18n.language === "en"
+                      ? t("header.languageEnglish")
+                      : t("header.languageIndonesian")}
+                  </span>
+                  <span
+                    role="switch"
+                    aria-checked={i18n.language === "en"}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      i18n.language === "en" ? "bg-primary" : "bg-muted"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
+                        i18n.language === "en" ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </span>
+                </div>
+              </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-2 h-px bg-border" />
               <DropdownMenu.Item
                 className="cursor-pointer select-none rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
@@ -333,7 +375,7 @@ const Header: React.FC = () => {
                   handleSignOut();
                 }}
               >
-                Sign Out
+                {t("actions.signOut")}
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>

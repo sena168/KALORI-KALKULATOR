@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { MenuItemWithMeta } from '@/hooks/useMenuData';
 import FoodCard from './FoodCard';
 import { cn } from '@/lib/utils';
+import { useTranslation } from "react-i18next";
 
 interface FoodMenuProps {
   items: MenuItemWithMeta[];
@@ -12,6 +13,7 @@ interface FoodMenuProps {
 }
 
 const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId, embedded = false }) => {
+  const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showTopButton, setShowTopButton] = useState(false);
   const [showBottomButton, setShowBottomButton] = useState(false);
@@ -68,9 +70,9 @@ const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId, embedded = false
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center text-muted-foreground">
-          <p className="text-tv-subtitle">Belum ada menu</p>
+          <p className="text-tv-subtitle">{t("menu.emptyTitle")}</p>
           <p className="text-tv-small mt-2">
-            Tambahkan menu melalui Admin Dashboard
+            {t("menu.emptySubtitle")}
           </p>
         </div>
       </div>
@@ -108,7 +110,7 @@ const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId, embedded = false
           "absolute top-4 right-6 z-10 touch-target rounded-full shadow-lg transition-opacity duration-200",
           showTopButton ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        title="Ke Atas"
+        title={t("actions.goUp")}
       >
         <ChevronUp className="h-6 w-6" />
       </Button>
@@ -121,7 +123,7 @@ const FoodMenu: React.FC<FoodMenuProps> = ({ items, categoryId, embedded = false
           "absolute bottom-4 right-6 z-10 touch-target rounded-full shadow-lg transition-opacity duration-200",
           showBottomButton ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        title="Ke Bawah"
+        title={t("actions.goDown")}
       >
         <ChevronDown className="h-6 w-6" />
       </Button>

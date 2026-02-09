@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import { MenuItemWithMeta, useMenuData } from "@/hooks/useMenuData";
 import { useProfile } from "@/hooks/useProfile";
+import { useTranslation } from "react-i18next";
 
 const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
@@ -17,6 +18,7 @@ const TIMEOUT_NOTICE_MS = 15000;
 type AdminTab = "overview" | "edit" | "tools";
 
 const AdminDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const { isAdmin, isLoading: profileLoading } = useProfile(Boolean(user));
   const { categories, isLoading, updateItem, deleteItem, setOrder, addItem } = useMenuData({
@@ -41,6 +43,9 @@ const AdminDashboard: React.FC = () => {
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [draftOrders, setDraftOrders] = useState<Record<string, string[]>>({});
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  const getCategoryLabel = (_categoryId: string, fallback?: string) =>
+    fallback ?? "";
 
   useEffect(() => {
     if (!categories.find((cat) => cat.id === activeCategory) && categories.length > 0) {
@@ -135,7 +140,7 @@ const AdminDashboard: React.FC = () => {
 
   const startTimeoutNotice = () =>
     window.setTimeout(() => {
-      toast.error("Koneksi time out, silahkan coba refresh. Jika perubahan belum muncul, coba lagi.");
+      toast.error(t("admin.errors.timeoutNotice"));
     }, TIMEOUT_NOTICE_MS);
 
   const handleImageChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -143,12 +148,12 @@ const AdminDashboard: React.FC = () => {
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      setFormError("Format gambar harus PNG atau JPG.");
+      setFormError(t("admin.errors.invalidImageType"));
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setFormError("Ukuran gambar maksimal 1MB.");
+      setFormError(t("admin.errors.imageTooLarge"));
       return;
     }
 
@@ -165,17 +170,17 @@ const AdminDashboard: React.FC = () => {
   const handleCaloriesChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const raw = event.target.value;
     if (raw === "" || /^\d+$/.test(raw)) {
-      setEditCalories(raw);
-      setFormError(null);
-      return;
-    }
-    setFormError("Kalori harus angka.");
+    setEditCalories(raw);
+    setFormError(null);
+    return;
+  }
+    setFormError(t("admin.errors.caloriesMustBeNumber"));
   };
 
   const handleSave = async () => {
     if (isSaving || busyAction) return;
     setIsSaving(true);
-    setBusyAction(isAddMode ? "Menambahkan menu..." : "Menyimpan perubahan...");
+    setBusyAction(isAddMode ? t("admin.busy.adding") : t("admin.busy.savingChanges"));
     const timeoutId = startTimeoutNotice();
 
     if (isAddMode) {
@@ -184,7 +189,7 @@ const AdminDashboard: React.FC = () => {
       const calories = Number(caloriesText);
 
       if (!trimmedName) {
-        setFormError("Nama wajib diisi.");
+        setFormError(t("admin.errors.nameRequired"));
         clearTimeout(timeoutId);
         setBusyAction(null);
         setIsSaving(false);
@@ -192,7 +197,7 @@ const AdminDashboard: React.FC = () => {
       }
 
       if (!/^\d+$/.test(caloriesText) || Number.isNaN(calories) || calories < 0) {
-        setFormError("Kalori harus angka 0 atau lebih.");
+        setFormError(t("admin.errors.caloriesNonNegative"));
         clearTimeout(timeoutId);
         setBusyAction(null);
         setIsSaving(false);
@@ -200,7 +205,7 @@ const AdminDashboard: React.FC = () => {
       }
 
       if (!imageDataUrl) {
-        setFormError("Gambar wajib diunggah.");
+        setFormError(t("admin.errors.imageRequired"));
         clearTimeout(timeoutId);
         setBusyAction(null);
         setIsSaving(false);
@@ -225,16 +230,16 @@ const AdminDashboard: React.FC = () => {
         await setOrder({ categoryId, order: nextOrder });
 
         setSelectedItemId(created.id);
-        toast.success("Menu berhasil ditambahkan.");
+        toast.success(t("admin.messages.itemAdded"));
         closeEdit();
       } catch (error) {
         const err = error as Error & { status?: number };
-        let message = "Gagal menambah menu.";
-        if (err.status === 400) message = "Data tidak valid.";
-        else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan.";
-        else if (err.status === 409) message = "Menu sudah ada.";
-        else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
-        else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
+        let message = t("admin.errors.addFailed");
+        if (err.status === 400) message = t("admin.errors.invalidData");
+        else if (err.status === 401 || err.status === 403) message = t("admin.errors.adminNotAllowed");
+        else if (err.status === 409) message = t("admin.errors.menuExists");
+        else if (err.message?.toLowerCase().includes("failed to fetch")) message = t("admin.errors.cannotConnect");
+        else if (err.message?.toLowerCase().includes("not authenticated")) message = t("admin.errors.loginAgain");
         else if (err.message) message = err.message;
         toast.error(message);
       } finally {
@@ -254,7 +259,7 @@ const AdminDashboard: React.FC = () => {
     const caloriesText = editCalories.trim();
     const calories = Number(caloriesText);
     if (!/^\d+$/.test(caloriesText) || Number.isNaN(calories) || calories < 0) {
-      setFormError("Kalori harus angka 0 atau lebih.");
+      setFormError(t("admin.errors.caloriesNonNegative"));
       clearTimeout(timeoutId);
       setBusyAction(null);
       setIsSaving(false);
@@ -278,16 +283,16 @@ const AdminDashboard: React.FC = () => {
 
     try {
       await updateItem({ id: editingItem.id, patch });
-      toast.success("Perubahan disimpan.");
+      toast.success(t("admin.messages.itemUpdated"));
       closeEdit();
     } catch (error) {
       const err = error as Error & { status?: number };
-      let message = "Gagal menyimpan perubahan.";
-      if (err.status === 400) message = "Data tidak valid.";
-      else if (err.status === 404) message = "Menu tidak ditemukan. Silakan refresh.";
-      else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan. Silakan login ulang.";
-      else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
-      else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
+      let message = t("admin.errors.updateFailed");
+      if (err.status === 400) message = t("admin.errors.invalidData");
+      else if (err.status === 404) message = t("admin.errors.menuNotFoundRefresh");
+      else if (err.status === 401 || err.status === 403) message = t("admin.errors.adminNotAllowedLogin");
+      else if (err.message?.toLowerCase().includes("failed to fetch")) message = t("admin.errors.cannotConnect");
+      else if (err.message?.toLowerCase().includes("not authenticated")) message = t("admin.errors.loginAgain");
       else if (err.message) message = err.message;
       toast.error(message);
       setIsSaving(false);
@@ -323,7 +328,7 @@ const AdminDashboard: React.FC = () => {
     if (busyAction) return;
     const draft = draftOrders[activeCategory];
     if (!draft) return;
-    setBusyAction("Menyimpan urutan...");
+    setBusyAction(t("admin.busy.savingOrder"));
     const timeoutId = startTimeoutNotice();
     try {
       await setOrder({ categoryId: activeCategory, order: draft });
@@ -332,13 +337,13 @@ const AdminDashboard: React.FC = () => {
         delete next[activeCategory];
         return next;
       });
-      toast.success("Urutan berhasil disimpan.");
+      toast.success(t("admin.messages.orderSaved"));
     } catch (error) {
       const err = error as Error & { status?: number };
-      let message = "Gagal menyimpan urutan.";
-      if (err.status === 400) message = "Data tidak valid.";
-      else if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan.";
-      else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
+      let message = t("admin.errors.orderFailed");
+      if (err.status === 400) message = t("admin.errors.invalidData");
+      else if (err.status === 401 || err.status === 403) message = t("admin.errors.adminNotAllowed");
+      else if (err.message?.toLowerCase().includes("failed to fetch")) message = t("admin.errors.cannotConnect");
       else if (err.message) message = err.message;
       toast.error(message);
     } finally {
@@ -350,21 +355,21 @@ const AdminDashboard: React.FC = () => {
   const handleDelete = async () => {
     if (busyAction) return;
     if (!editingItem) return;
-    const confirmed = window.confirm("Hapus menu ini?");
+    const confirmed = window.confirm(t("admin.confirmDelete"));
     if (!confirmed) return;
-    setBusyAction("Menghapus menu...");
+    setBusyAction(t("admin.busy.deleting"));
     const timeoutId = startTimeoutNotice();
     try {
       await deleteItem(editingItem.id);
-      toast.success("Menu berhasil dihapus.");
+      toast.success(t("admin.messages.itemDeleted"));
       closeEdit();
     } catch (error) {
       const err = error as Error & { status?: number };
-      let message = "Gagal menghapus menu.";
-      if (err.status === 404) message = "Menu tidak ditemukan. Silakan refresh.";
-      if (err.status === 401 || err.status === 403) message = "Akses admin tidak diizinkan. Silakan login ulang.";
-      else if (err.message?.toLowerCase().includes("failed to fetch")) message = "Tidak dapat terhubung ke server.";
-      else if (err.message?.toLowerCase().includes("not authenticated")) message = "Silakan login ulang.";
+      let message = t("admin.errors.deleteFailed");
+      if (err.status === 404) message = t("admin.errors.menuNotFoundRefresh");
+      if (err.status === 401 || err.status === 403) message = t("admin.errors.adminNotAllowedLogin");
+      else if (err.message?.toLowerCase().includes("failed to fetch")) message = t("admin.errors.cannotConnect");
+      else if (err.message?.toLowerCase().includes("not authenticated")) message = t("admin.errors.loginAgain");
       else if (err.message) message = err.message;
       toast.error(message);
     } finally {
@@ -379,10 +384,10 @@ const AdminDashboard: React.FC = () => {
         <div className="text-center">
           <img
             src="/bmicalico1.png"
-            alt="Loading"
+            alt={t("loading.adminAuth")}
             className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
-          <p className="text-muted-foreground text-tv-body">Memuat... (Admin Auth)</p>
+          <p className="text-muted-foreground text-tv-body">{t("loading.adminAuth")}</p>
         </div>
       </div>
     );
@@ -396,12 +401,12 @@ const AdminDashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center">
-          <h2 className="text-tv-subtitle text-foreground mb-2">Akses admin tidak diizinkan</h2>
+          <h2 className="text-tv-subtitle text-foreground mb-2">{t("admin.accessDeniedTitle")}</h2>
           <p className="text-tv-body text-muted-foreground mb-6">
-            Akun ini bukan admin. Silakan kembali ke kalkulator.
+            {t("admin.accessDeniedBody")}
           </p>
           <Button onClick={() => window.location.assign("/")} className="w-full">
-            Kembali ke Kalkulator
+            {t("actions.backToCalculator")}
           </Button>
         </div>
       </div>
@@ -414,10 +419,10 @@ const AdminDashboard: React.FC = () => {
         <div className="text-center">
           <img
             src="/bmicalico1.png"
-            alt="Loading"
+            alt={t("loading.adminData")}
             className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
-          <p className="text-muted-foreground text-tv-body">Memuat... (Admin Data)</p>
+          <p className="text-muted-foreground text-tv-body">{t("loading.adminData")}</p>
         </div>
       </div>
     );
@@ -442,7 +447,11 @@ const AdminDashboard: React.FC = () => {
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                 )}
               >
-                {tab === "overview" ? "Ringkasan" : tab === "edit" ? "Edit" : "Alat"}
+                {tab === "overview"
+                  ? t("admin.tabs.overview")
+                  : tab === "edit"
+                  ? t("admin.tabs.edit")
+                  : t("admin.tabs.tools")}
               </button>
             ))}
           </div>
@@ -455,54 +464,56 @@ const AdminDashboard: React.FC = () => {
             <div className="container mx-auto space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">Total Menu Items</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.totalItems")}</p>
                   <p className="text-tv-title font-bold text-primary">{stats.totalItems}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">Total Kategori</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.totalCategories")}</p>
                   <p className="text-tv-title font-bold text-primary">{stats.totalCategories}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">Hidden Items</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.hiddenItems")}</p>
                   <p className="text-tv-title font-bold text-primary">{stats.hiddenTotal}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">Low Calorie (0-150)</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.lowCalorie")}</p>
                   <p className="text-tv-title font-bold text-foreground">{stats.low}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">Medium Calorie (151-500)</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.mediumCalorie")}</p>
                   <p className="text-tv-title font-bold text-foreground">{stats.medium}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                  <p className="text-tv-small text-muted-foreground">High Calorie (501+)</p>
+                  <p className="text-tv-small text-muted-foreground">{t("admin.stats.highCalorie")}</p>
                   <p className="text-tv-title font-bold text-foreground">{stats.high}</p>
                 </div>
               </div>
 
               <div className="bg-card border border-border rounded-xl p-5 shadow-md">
-                <p className="text-tv-subtitle font-semibold text-foreground mb-4">Hidden Breakdown</p>
+                <p className="text-tv-subtitle font-semibold text-foreground mb-4">{t("admin.hiddenBreakdown")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-muted rounded-lg p-4">
-                    <p className="text-tv-small text-muted-foreground">Hidden Low</p>
+                    <p className="text-tv-small text-muted-foreground">{t("admin.hiddenLow")}</p>
                     <p className="text-tv-body font-semibold">{stats.hiddenLow}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-4">
-                    <p className="text-tv-small text-muted-foreground">Hidden Medium</p>
+                    <p className="text-tv-small text-muted-foreground">{t("admin.hiddenMedium")}</p>
                     <p className="text-tv-body font-semibold">{stats.hiddenMedium}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-4">
-                    <p className="text-tv-small text-muted-foreground">Hidden High</p>
+                    <p className="text-tv-small text-muted-foreground">{t("admin.hiddenHigh")}</p>
                     <p className="text-tv-body font-semibold">{stats.hiddenHigh}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   {stats.hiddenByCategory.map((category) => (
                     <div key={category.id} className="bg-muted rounded-lg p-4">
-                      <p className="text-tv-small text-muted-foreground">Hidden {category.label}</p>
+                      <p className="text-tv-small text-muted-foreground">
+                        {t("admin.hiddenCategory", { category: getCategoryLabel(category.id, category.label) })}
+                      </p>
                       <p className="text-tv-body font-semibold">{category.count}</p>
                     </div>
                   ))}
@@ -529,7 +540,7 @@ const AdminDashboard: React.FC = () => {
                           : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                       )}
                     >
-                      {category.label}
+                      {getCategoryLabel(category.id, category.label)}
                     </button>
                   ))}
                 </div>
@@ -585,16 +596,16 @@ const AdminDashboard: React.FC = () => {
                             </h3>
                             {item.hidden && (
                               <span className="text-xs uppercase tracking-wide bg-muted text-muted-foreground px-2 py-1 rounded-full">
-                                Hidden
+                                {t("admin.itemHidden")}
                               </span>
                             )}
                           </div>
                           <p className="text-[0.9rem] sm:text-[0.95rem] md:text-[1rem] min-[1400px]:text-tv-body text-muted-foreground mt-2">
-                            {item.calories} kkal
+                            {item.calories} {t("units.kcal")}
                           </p>
                         </div>
                         <Button size="sm" variant="secondary" onClick={() => openEdit(item)}>
-                          Edit
+                          {t("actions.edit")}
                         </Button>
                       </div>
                     </div>
@@ -614,14 +625,14 @@ const AdminDashboard: React.FC = () => {
               disabled={Boolean(busyAction)}
               className="fixed bottom-6 right-6 z-50 touch-target text-tv-body font-medium px-6 md:px-8 shadow-lg"
             >
-              {isOrderDirty ? "Atur" : "Tambahkan"}
+              {isOrderDirty ? t("actions.arrange") : t("actions.add")}
             </Button>
           </div>
         )}
 
         {activeTab === "tools" && (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-tv-body text-muted-foreground">Alat akan ditambahkan nanti.</p>
+            <p className="text-tv-body text-muted-foreground">{t("admin.toolsComing")}</p>
           </div>
         )}
       </main>
@@ -632,18 +643,18 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-tv-subtitle font-semibold text-foreground">
-                  {isAddMode ? "Tambahkan Menu" : "Edit Menu"}
+                  {isAddMode ? t("admin.addMenuTitle") : t("admin.editMenuTitle")}
                 </h2>
                 {!isAddMode && editingItem && (
                   <p className="text-tv-small text-muted-foreground">{editingItem.name}</p>
                 )}
               </div>
-              <Button variant="ghost" onClick={closeEdit}>Tutup</Button>
+              <Button variant="ghost" onClick={closeEdit}>{t("actions.close")}</Button>
             </div>
 
             <div className="mt-6 space-y-4">
               <label className="block">
-                <span className="text-tv-small text-muted-foreground">Nama</span>
+                <span className="text-tv-small text-muted-foreground">{t("admin.nameLabel")}</span>
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
@@ -652,7 +663,7 @@ const AdminDashboard: React.FC = () => {
               </label>
 
               <label className="block">
-                <span className="text-tv-small text-muted-foreground">Kalori</span>
+                <span className="text-tv-small text-muted-foreground">{t("admin.caloriesLabel")}</span>
                 <input
                   type="number"
                   min={0}
@@ -666,7 +677,7 @@ const AdminDashboard: React.FC = () => {
 
               <label className="block">
                 <span className="text-tv-small text-muted-foreground">
-                  Gambar (PNG/JPG, max 1MB){isAddMode ? " - wajib" : ""}
+                  {t("admin.imageLabel")}{isAddMode ? t("admin.imageRequiredSuffix") : ""}
                 </span>
                 <input
                   type="file"
@@ -681,7 +692,7 @@ const AdminDashboard: React.FC = () => {
                   {imagePreview ? (
                     <img
                       src={imagePreview}
-                      alt="Preview"
+                      alt={t("admin.previewAlt")}
                       className="w-full h-full object-cover"
                       onError={(event) => {
                         const target = event.currentTarget;
@@ -693,7 +704,7 @@ const AdminDashboard: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <span className="text-xs text-muted-foreground">No Image</span>
+                    <span className="text-xs text-muted-foreground">{t("actions.noImage")}</span>
                   )}
                 </div>
                 <Button
@@ -701,7 +712,7 @@ const AdminDashboard: React.FC = () => {
                   variant={editHidden ? "secondary" : "outline"}
                   onClick={() => setEditHidden((prev) => !prev)}
                 >
-                  {editHidden ? "Show" : "Hide"}
+                  {editHidden ? t("actions.show") : t("actions.hide")}
                 </Button>
               </div>
 
@@ -711,13 +722,13 @@ const AdminDashboard: React.FC = () => {
             <div className="mt-6 flex justify-between gap-3">
               {!isAddMode && (
                 <Button variant="destructive" onClick={handleDelete} disabled={Boolean(busyAction)}>
-                  Hapus
+                  {t("actions.delete")}
                 </Button>
               )}
               <div className="flex gap-3">
-                <Button variant="secondary" onClick={closeEdit}>Batal</Button>
+                <Button variant="secondary" onClick={closeEdit}>{t("actions.cancel")}</Button>
                 <Button onClick={handleSave} disabled={isSaving || Boolean(busyAction)}>
-                  {isSaving ? "Menyimpan..." : "Simpan"}
+                  {isSaving ? t("actions.saving") : t("actions.save")}
                 </Button>
               </div>
             </div>

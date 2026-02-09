@@ -1,8 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from "react-i18next";
 
 const Landing: React.FC = () => {
+  const { t } = useTranslation();
   const { signInWithGoogle } = useAuth();
 
   const handleGoogleLogin = async () => {
@@ -13,7 +15,7 @@ const Landing: React.FC = () => {
     }
 
     console.error("Google sign-in failed:", error);
-    window.alert("Gagal masuk dengan Google. Coba lagi.");
+    window.alert(t("header.googleLoginFailed"));
   };
 
   const handleOpenApp = () => {
@@ -32,10 +34,10 @@ const Landing: React.FC = () => {
         <div className="flex flex-col items-start gap-6 md:gap-5">
           <div className="space-y-3">
             <h1 className="text-tv-title text-foreground">
-              Kalkulator Kalori
+              {t("app.title")}
             </h1>
             <p className="text-tv-body text-muted-foreground max-w-md">
-              Hitung kalori makanan dan minuman dengan mudah dan cepat
+              {t("app.subtitle")}
             </p>
           </div>
           <div className="flex flex-col items-start gap-4 w-full max-w-sm">
@@ -44,14 +46,14 @@ const Landing: React.FC = () => {
               onClick={handleOpenApp}
               className="w-full touch-target text-tv-body font-medium px-8 md:px-12 py-6 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              Buka Aplikasi
+              {t("actions.openApp")}
             </Button>
             <Button
               size="sm"
               onClick={handleGoogleLogin}
               className="w-full touch-target text-tv-small font-medium px-6 md:px-10 py-4 md:py-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-primary text-primary-foreground"
             >
-              Login Dengan Google
+              {t("actions.loginGoogle")}
             </Button>
           </div>
         </div>
@@ -60,7 +62,7 @@ const Landing: React.FC = () => {
         <div className="flex justify-center md:justify-end">
           <img
             src="/bmihero.png"
-            alt="BMI Hero"
+            alt={t("landing.heroAlt")}
             className="w-full max-w-md md:max-w-sm lg:max-w-md h-auto max-h-[80vh] object-contain"
           />
         </div>
@@ -70,7 +72,7 @@ const Landing: React.FC = () => {
       <div className="md:hidden order-3 mt-6 flex justify-center">
         <img
           src="/bmihero.png"
-          alt="BMI Hero"
+          alt={t("landing.heroAlt")}
           className="w-full max-w-xs h-auto max-h-[40vh] object-contain"
         />
       </div>
@@ -78,7 +80,7 @@ const Landing: React.FC = () => {
       {/* Footer Branding */}
       <div className="absolute bottom-6 inset-x-0 flex justify-center">
         <p className="text-xs text-muted-foreground tracking-[0.2em]">
-          [PROMPT ONE VISUALS]
+          {t("app.footerBranding")}
         </p>
       </div>
     </div>

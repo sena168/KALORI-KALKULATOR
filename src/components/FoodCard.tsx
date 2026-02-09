@@ -4,6 +4,7 @@ import { useCalories } from '@/contexts/CalorieContext';
 import QuantityControl from './QuantityControl';
 import { cn } from '@/lib/utils';
 import { getNextImageFallback } from '@/lib/imageFallback';
+import { useTranslation } from "react-i18next";
 
 interface FoodCardProps {
   item: MenuItemWithMeta;
@@ -11,6 +12,7 @@ interface FoodCardProps {
 }
 
 const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
+  const { t } = useTranslation();
   const { getQuantity, incrementQuantity, decrementQuantity } = useCalories();
   const [imageError, setImageError] = useState(false);
   
@@ -43,7 +45,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
         {/* Image */}
         <div className="w-full aspect-square rounded-lg overflow-hidden bg-muted flex items-center justify-center">
           {imageError ? (
-            <div className="text-muted-foreground text-sm">No Image</div>
+            <div className="text-muted-foreground text-sm">{t("actions.noImage")}</div>
           ) : (
             <img
               src={item.imagePath}
@@ -61,7 +63,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
             {item.name}
           </h3>
           <p className="text-tv-small text-muted-foreground mt-1">
-            {item.calories} kkal
+            {item.calories} {t("units.kcal")}
           </p>
         </div>
         
@@ -83,7 +85,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
         {/* Image - Left */}
         <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex-shrink-0 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
           {imageError ? (
-            <div className="text-muted-foreground text-xs">No Image</div>
+            <div className="text-muted-foreground text-xs">{t("actions.noImage")}</div>
           ) : (
             <img
               src={item.imagePath}
@@ -101,7 +103,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, embedded = false }) => {
             {item.name}
           </h3>
           <p className="text-[0.9rem] sm:text-[0.95rem] md:text-[1rem] min-[1400px]:text-tv-body text-muted-foreground mt-2">
-            {item.calories} kkal
+            {item.calories} {t("units.kcal")}
           </p>
         </div>
         

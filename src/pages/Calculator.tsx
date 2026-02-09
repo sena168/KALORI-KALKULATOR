@@ -5,12 +5,14 @@ import CategoryTabs from '@/components/CategoryTabs';
 import FoodMenu from '@/components/FoodMenu';
 import BottomBar from '@/components/BottomBar';
 import { useMenuData } from '@/hooks/useMenuData';
+import { useTranslation } from "react-i18next";
 
 interface CalculatorContentProps {
   embedded?: boolean;
 }
 
 export const CalculatorContent: React.FC<CalculatorContentProps> = ({ embedded = false }) => {
+  const { t } = useTranslation();
   const { categories: menuData, isLoading } = useMenuData({ includeHidden: false });
   const [activeCategory, setActiveCategory] = useState<string>(menuData[0]?.id || 'makanan-utama');
 
@@ -35,10 +37,10 @@ export const CalculatorContent: React.FC<CalculatorContentProps> = ({ embedded =
         <div className="text-center">
           <img
             src="/bmicalico1.png"
-            alt="Loading"
+            alt={t("loading.calculator")}
             className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
-          <p className="text-muted-foreground text-tv-body">Memuat... (Calculator)</p>
+          <p className="text-muted-foreground text-tv-body">{t("loading.calculator")}</p>
         </div>
       </div>
     );

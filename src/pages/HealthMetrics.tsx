@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { HealthMetricsProvider, useHealthMetrics } from "@/contexts/HealthMetricsContext";
+import { useTranslation } from "react-i18next";
 
 const MAX_IMAGE_SIZE = 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
@@ -12,22 +13,30 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 type TabKey = "bmi" | "body-fat" | "tdee" | "burned" | "heart";
 
 const activityOptions = [
-  { label: "Sedentary", value: 1.2 },
-  { label: "Light", value: 1.375 },
-  { label: "Moderate", value: 1.55 },
-  { label: "Active", value: 1.725 },
-  { label: "Extra Active", value: 1.9 },
+  { key: "sedentary", value: 1.2 },
+  { key: "light", value: 1.375 },
+  { key: "moderate", value: 1.55 },
+  { key: "active", value: 1.725 },
+  { key: "extraActive", value: 1.9 },
 ];
 
 const metActivities = [
-  { label: "Walking (slow)", met: 2.5 },
-  { label: "Walking (brisk)", met: 3.8 },
-  { label: "Jogging", met: 7.0 },
-  { label: "Cycling (moderate)", met: 6.8 },
-  { label: "Swimming", met: 6.0 },
-  { label: "Strength training", met: 5.0 },
-  { label: "Yoga", met: 3.0 },
-  { label: "Basketball", met: 8.0 },
+  { key: "walkingSlow", met: 2.5 },
+  { key: "walkingBrisk", met: 3.8 },
+  { key: "jogging", met: 7.0 },
+  { key: "cyclingModerate", met: 6.8 },
+  { key: "swimming", met: 6.0 },
+  { key: "strengthTraining", met: 5.0 },
+  { key: "yoga", met: 3.0 },
+  { key: "basketball", met: 8.0 },
+];
+
+const heartZoneConfig = [
+  { key: "recovery", min: 0.5, max: 0.6 },
+  { key: "fatBurn", min: 0.6, max: 0.7 },
+  { key: "aerobic", min: 0.7, max: 0.8 },
+  { key: "threshold", min: 0.8, max: 0.9 },
+  { key: "maximum", min: 0.9, max: 1.0 },
 ];
 
 const numberOrZero = (value: unknown) => (Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -37,6 +46,7 @@ interface HealthMetricsContentProps {
 }
 
 const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = false }) => {
+  const { t } = useTranslation();
   const { user, loading, signInWithGoogle } = useAuth();
   const { profile, isLoading: profileLoading, error: profileError, saveProfile } = useProfile(Boolean(user));
   const { age, weight, height, gender, setAge, setWeight, setHeight, setGender } = useHealthMetrics();
@@ -51,10 +61,15 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const [burnDuration, setBurnDuration] = useState("30");
-  const [burnActivity, setBurnActivity] = useState(metActivities[0]);
-  const [burnList, setBurnList] = useState<Array<{ label: string; met: number; minutes: number }>>([]);
+  const [burnActivityKey, setBurnActivityKey] = useState(metActivities[0]?.key ?? "walkingSlow");
+  const [burnList, setBurnList] = useState<Array<{ key: string; met: number; minutes: number }>>([]);
   const [selectedBurnIndices, setSelectedBurnIndices] = useState<number[]>([]);
   const [forceReady, setForceReady] = useState(false);
+
+  const burnActivity = useMemo(
+    () => metActivities.find((item) => item.key === burnActivityKey) ?? metActivities[0],
+    [burnActivityKey],
+  );
 
   useEffect(() => {
     if (!profile || hasHydrated) return;
@@ -147,11 +162,11 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
     const file = event.target.files?.[0];
     if (!file) return;
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      window.alert("Foto harus PNG atau JPG.");
+      window.alert(t("health.profile.invalidImageType"));
       return;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      window.alert("Ukuran foto maksimal 1MB.");
+      window.alert(t("health.profile.imageTooLarge"));
       return;
     }
     const reader = new FileReader();
@@ -176,10 +191,10 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
         photoUrl: photoDataUrl ?? undefined,
       });
       setPhotoDataUrl(null);
-      toast.success("Profil berhasil disimpan.");
+      toast.success(t("health.profileSaved"));
     } catch (error) {
       console.error("Profile save failed:", error);
-      toast.error("Gagal menyimpan profil.");
+      toast.error(t("health.profileSaveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -192,12 +207,12 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   }, [height, weight]);
 
   const bmiCategory = useMemo(() => {
-    if (bmi === 0) return "—";
-    if (bmi < 18.5) return "Underweight";
-    if (bmi < 25) return "Normal";
-    if (bmi < 30) return "Overweight";
-    return "Obese";
-  }, [bmi]);
+    if (bmi === 0) return t("health.bmi.empty");
+    if (bmi < 18.5) return t("health.bmi.categories.underweight");
+    if (bmi < 25) return t("health.bmi.categories.normal");
+    if (bmi < 30) return t("health.bmi.categories.overweight");
+    return t("health.bmi.categories.obese");
+  }, [bmi, t]);
 
   const bmiScaleMax = 45;
   const bmiPercent = useMemo(() => {
@@ -224,13 +239,13 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
 
   const bmiSegmentWidths = useMemo(
     () => [
-      { key: "under", label: "Underweight < 18.5", color: "bg-blue-500", width: bmiSegment.under },
-      { key: "normal", label: "Normal 18.5 - 24.9", color: "bg-emerald-500", width: bmiSegment.normal },
-      { key: "over", label: "Overweight 25 - 29.9", color: "bg-amber-400", width: bmiSegment.over },
-      { key: "obese", label: "Obese 30 - 39.9", color: "bg-orange-500", width: bmiSegment.obese },
-      { key: "morbid", label: "Morbid ≥ 40", color: "bg-red-600", width: bmiSegment.morbid },
+      { key: "under", label: t("health.bmi.segments.under"), color: "bg-blue-500", width: bmiSegment.under },
+      { key: "normal", label: t("health.bmi.segments.normal"), color: "bg-emerald-500", width: bmiSegment.normal },
+      { key: "over", label: t("health.bmi.segments.over"), color: "bg-amber-400", width: bmiSegment.over },
+      { key: "obese", label: t("health.bmi.segments.obese"), color: "bg-orange-500", width: bmiSegment.obese },
+      { key: "morbid", label: t("health.bmi.segments.morbid"), color: "bg-red-600", width: bmiSegment.morbid },
     ],
-    [bmiSegment],
+    [bmiSegment, t],
   );
 
   const idealRange = useMemo(() => {
@@ -246,11 +261,11 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   }, [age, bmi, gender]);
 
   const bodyFatCategory = useMemo(() => {
-    if (!bodyFat) return "—";
-    if (bodyFat < 18) return "Low";
-    if (bodyFat < 25) return "Normal";
-    return "High";
-  }, [bodyFat]);
+    if (!bodyFat) return t("health.bodyFat.empty");
+    if (bodyFat < 18) return t("health.bodyFat.categories.low");
+    if (bodyFat < 25) return t("health.bodyFat.categories.normal");
+    return t("health.bodyFat.categories.high");
+  }, [bodyFat, t]);
 
   const bodyFatScaleMax = 40;
   const bodyFatSegments = useMemo(() => {
@@ -264,11 +279,11 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
 
   const bodyFatSegmentWidths = useMemo(
     () => [
-      { key: "low", label: "Low", color: "bg-blue-500", width: bodyFatSegments.low },
-      { key: "normal", label: "Normal", color: "bg-emerald-500", width: bodyFatSegments.normal },
-      { key: "high", label: "High", color: "bg-orange-500", width: bodyFatSegments.high },
+      { key: "low", label: t("health.bodyFat.segments.low"), color: "bg-blue-500", width: bodyFatSegments.low },
+      { key: "normal", label: t("health.bodyFat.segments.normal"), color: "bg-emerald-500", width: bodyFatSegments.normal },
+      { key: "high", label: t("health.bodyFat.segments.high"), color: "bg-orange-500", width: bodyFatSegments.high },
     ],
-    [bodyFatSegments],
+    [bodyFatSegments, t],
   );
 
   const bmr = useMemo(() => {
@@ -284,7 +299,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
   const addBurnActivity = () => {
     const minutes = numberOrZero(burnDuration);
     if (minutes <= 0) return;
-    setBurnList((prev) => [...prev, { label: burnActivity.label, met: burnActivity.met, minutes }]);
+    setBurnList((prev) => [...prev, { key: burnActivity.key, met: burnActivity.met, minutes }]);
   };
 
   const toggleBurnSelection = (index: number) => {
@@ -310,20 +325,13 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
 
   const heartZones = useMemo(() => {
     const max = 220 - age;
-    const ranges = [
-      { label: "Recovery", min: 0.5, max: 0.6, desc: "Improves overall health & recovery" },
-      { label: "Fat Burn", min: 0.6, max: 0.7, desc: "Improves basic endurance & fat burn" },
-      { label: "Aerobic", min: 0.7, max: 0.8, desc: "Improves aerobic capacity" },
-      { label: "Threshold", min: 0.8, max: 0.9, desc: "Increases performance threshold" },
-      { label: "Maximum", min: 0.9, max: 1.0, desc: "Develops maximum performance" },
-    ];
-    return ranges.map((zone) => ({
-      label: zone.label,
+    return heartZoneConfig.map((zone) => ({
+      label: t(`health.heart.zones.${zone.key}`),
       min: Math.round(max * zone.min),
       max: Math.round(max * zone.max),
-      desc: zone.desc,
+      desc: t(`health.heart.descriptions.${zone.key}`),
     }));
-  }, [age]);
+  }, [age, t]);
 
   const pageHeightClass = embedded ? "h-full" : "min-h-screen";
 
@@ -333,10 +341,10 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
         <div className="text-center">
           <img
             src="/bmicalico1.png"
-            alt="Loading"
+            alt={t("loading.healthMetrics")}
             className="w-20 h-20 mx-auto animate-pulse mb-4 object-contain"
           />
-          <p className="text-muted-foreground text-tv-body">Memuat... (Health Metrics)</p>
+          <p className="text-muted-foreground text-tv-body">{t("loading.healthMetrics")}</p>
         </div>
       </div>
     );
@@ -347,9 +355,9 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
     return (
       <div className={`${pageHeightClass} bg-background flex items-center justify-center p-6`}>
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center">
-          <h2 className="text-tv-subtitle text-foreground mb-2">BMI Index membutuhkan login</h2>
+          <h2 className="text-tv-subtitle text-foreground mb-2">{t("health.loginRequiredTitle")}</h2>
           <p className="text-tv-body text-muted-foreground mb-6">
-            Silakan login dengan Google untuk melanjutkan.
+            {t("health.loginRequiredBody")}
           </p>
           <Button
             size="lg"
@@ -358,12 +366,12 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
               if (!error) {
                 window.location.assign(redirectPath);
               } else {
-                window.alert("Gagal masuk dengan Google. Coba lagi.");
+                window.alert(t("header.googleLoginFailed"));
               }
             }}
             className="w-full"
           >
-            Login Dengan Google
+            {t("actions.loginGoogle")}
           </Button>
         </div>
       </div>
@@ -380,7 +388,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center">
               <div className="bg-card border border-border rounded-xl px-6 py-4 shadow-xl flex items-center gap-3">
                 <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                <span className="text-tv-body text-foreground">Menyimpan profil...</span>
+                <span className="text-tv-body text-foreground">{t("health.profileSaving")}</span>
               </div>
             </div>
           )}
@@ -389,11 +397,11 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             <div className="px-4">
               <div className="flex gap-2 md:gap-4 py-3 md:py-4 flex-wrap">
               {[
-                { key: "bmi", label: "BMI" },
-                { key: "body-fat", label: "Body Fat %" },
-                { key: "tdee", label: "Daily Calorie Intake" },
-                { key: "burned", label: "Calories Burned" },
-                { key: "heart", label: "Heart Rate Zones" },
+                { key: "bmi", label: t("health.tabs.bmi") },
+                { key: "body-fat", label: t("health.tabs.bodyFat") },
+                { key: "tdee", label: t("health.tabs.tdee") },
+                { key: "burned", label: t("health.tabs.burned") },
+                { key: "heart", label: t("health.tabs.heart") },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -428,17 +436,17 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                 <>
                   {profileError ? (
                     <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                      Profil tersimpan tidak bisa dimuat. Silakan isi ulang datanya.
+                      {t("health.profileLoadFailed")}
                     </div>
                   ) : !profile ? (
                     <div className="mb-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                      Harap lengkapi data untuk menggunakan kalkulator.
+                      {t("health.profileCompleteHint")}
                     </div>
                   ) : null}
                   <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                       <label className="block">
-                        <span className="text-tv-small text-muted-foreground">Usia</span>
+                        <span className="text-tv-small text-muted-foreground">{t("health.profile.age")}</span>
                         <input
                           type="number"
                           min={1}
@@ -448,7 +456,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         />
                       </label>
                       <label className="block">
-                        <span className="text-tv-small text-muted-foreground">Berat (kg)</span>
+                        <span className="text-tv-small text-muted-foreground">{t("health.profile.weight")}</span>
                         <input
                           type="number"
                           min={1}
@@ -458,7 +466,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         />
                       </label>
                       <label className="block">
-                        <span className="text-tv-small text-muted-foreground">Tinggi (cm)</span>
+                        <span className="text-tv-small text-muted-foreground">{t("health.profile.height")}</span>
                         <input
                           type="number"
                           min={1}
@@ -468,7 +476,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         />
                       </label>
                       <label className="block">
-                        <span className="text-tv-small text-muted-foreground">Gender</span>
+                        <span className="text-tv-small text-muted-foreground">{t("health.profile.gender")}</span>
                         <div className="mt-2 flex gap-2">
                           <Button
                             type="button"
@@ -476,7 +484,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                             onClick={() => setGender("male")}
                             className="flex-1"
                           >
-                            Male
+                            {t("health.profile.male")}
                           </Button>
                           <Button
                             type="button"
@@ -484,7 +492,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                             onClick={() => setGender("female")}
                             className="flex-1"
                           >
-                            Female
+                            {t("health.profile.female")}
                           </Button>
                         </div>
                       </label>
@@ -492,7 +500,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
 
                     <div className="w-full lg:w-64 flex flex-col gap-4">
                       <label className="block">
-                        <span className="text-tv-small text-muted-foreground">Username (opsional)</span>
+                        <span className="text-tv-small text-muted-foreground">{t("health.profile.username")}</span>
                         <input
                           value={username}
                           onChange={(event) => setUsername(event.target.value)}
@@ -503,7 +511,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                           <img
                             src={photoPreview}
-                            alt="Profile"
+                            alt={t("header.profileTitle")}
                             className="w-full h-full object-cover"
                             onError={(event) => {
                               const target = event.currentTarget;
@@ -515,7 +523,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         </div>
                         <div className="flex-1">
                           <label className="block text-tv-small text-muted-foreground">
-                            Foto (PNG/JPG, max 1MB)
+                            {t("health.profile.photo")}
                           </label>
                           <input
                             type="file"
@@ -530,7 +538,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                         disabled={!isDirty || isSaving || !isProfileValid}
                         variant={isDirty && isProfileValid ? "default" : "secondary"}
                       >
-                        {isSaving ? "Menyimpan..." : "Simpan Profil"}
+                        {isSaving ? t("health.profile.saving") : t("health.profile.save")}
                       </Button>
                     </div>
                   </div>
@@ -543,11 +551,11 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-tv-small text-muted-foreground">BMI</p>
-                  <p className="text-tv-title font-bold text-primary">{bmi ? bmi.toFixed(1) : "—"}</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bmi.label")}</p>
+                  <p className="text-tv-title font-bold text-primary">{bmi ? bmi.toFixed(1) : t("health.bmi.empty")}</p>
                 </div>
                 <div>
-                  <p className="text-tv-small text-muted-foreground">Kategori</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bmi.categoryLabel")}</p>
                   <p className="text-tv-subtitle text-foreground">{bmiCategory}</p>
                 </div>
               </div>
@@ -587,9 +595,9 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                 ))}
               </div>
               <div>
-                <p className="text-tv-small text-muted-foreground">Ideal Weight Range</p>
+                <p className="text-tv-small text-muted-foreground">{t("health.bmi.idealWeightRange")}</p>
                 <p className="text-tv-body text-foreground">
-                  {idealRange.min.toFixed(1)} kg - {idealRange.max.toFixed(1)} kg
+                  {t("health.bmi.range", { min: idealRange.min.toFixed(1), max: idealRange.max.toFixed(1) })}
                 </p>
               </div>
             </div>
@@ -599,13 +607,13 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-tv-small text-muted-foreground">Body Fat %</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bodyFat.label")}</p>
                   <p className="text-tv-title font-bold text-primary">
-                    {bodyFat ? bodyFat.toFixed(1) : "—"}%
+                    {bodyFat ? bodyFat.toFixed(1) : t("health.bodyFat.empty")}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-tv-small text-muted-foreground">Kategori</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bodyFat.categoryLabel")}</p>
                   <p className="text-tv-subtitle text-foreground">{bodyFatCategory}</p>
                 </div>
               </div>
@@ -630,15 +638,15 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Lean Mass</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bodyFat.leanMass")}</p>
                   <p className="text-tv-body font-semibold">
-                    {weight ? (weight * (1 - bodyFat / 100)).toFixed(1) : "—"} kg
+                    {weight ? (weight * (1 - bodyFat / 100)).toFixed(1) : t("health.bodyFat.empty")} {t("units.kg")}
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Fat Mass</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.bodyFat.fatMass")}</p>
                   <p className="text-tv-body font-semibold">
-                    {weight ? (weight * (bodyFat / 100)).toFixed(1) : "—"} kg
+                    {weight ? (weight * (bodyFat / 100)).toFixed(1) : t("health.bodyFat.empty")} {t("units.kg")}
                   </p>
                 </div>
               </div>
@@ -649,43 +657,43 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
               <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1">
-                  <p className="text-tv-small text-muted-foreground">Activity Level</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.activityLevel")}</p>
                   <select
                     value={activityLevel}
                     onChange={(event) => setActivityLevel(Number(event.target.value))}
                     className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
                   >
                     {activityOptions.map((option) => (
-                      <option key={option.label} value={option.value}>
-                        {option.label}
+                      <option key={option.key} value={option.value}>
+                        {t(`health.tdee.activityOptions.${option.key}`)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <p className="text-tv-small text-muted-foreground">BMR</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.bmr")}</p>
                   <p className="text-tv-title font-bold text-primary">{Math.round(bmr)}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Maintenance</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.maintenance")}</p>
                   <p className="text-tv-body font-semibold">{Math.round(maintenanceCalories)}</p>
                 </div>
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Smooth Loss</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.smoothLoss")}</p>
                   <p className="text-tv-body font-semibold">
                     {Math.round(maintenanceCalories - 250)}
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Fast Loss</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.fastLoss")}</p>
                   <p className="text-tv-body font-semibold">
                     {Math.round(maintenanceCalories - 500)}
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-tv-small text-muted-foreground">Smooth Gain</p>
+                  <p className="text-tv-small text-muted-foreground">{t("health.tdee.smoothGain")}</p>
                   <p className="text-tv-body font-semibold">
                     {Math.round(maintenanceCalories + 250)}
                   </p>
@@ -697,28 +705,28 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
           {activeTab === "burned" && (
             <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4 relative">
               <div>
-                <p className="text-tv-small text-muted-foreground">Physical Activity</p>
+                <p className="text-tv-small text-muted-foreground">{t("health.burned.title")}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="block">
-                  <span className="text-tv-small text-muted-foreground">Activity</span>
+                  <span className="text-tv-small text-muted-foreground">{t("health.burned.activity")}</span>
                   <select
-                    value={burnActivity.label}
+                    value={burnActivityKey}
                     onChange={(event) => {
-                      const next = metActivities.find((item) => item.label === event.target.value);
-                      if (next) setBurnActivity(next);
+                      const next = metActivities.find((item) => item.key === event.target.value);
+                      if (next) setBurnActivityKey(next.key);
                     }}
                     className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground"
                   >
                     {metActivities.map((item) => (
-                      <option key={item.label} value={item.label}>
-                        {item.label}
+                      <option key={item.key} value={item.key}>
+                        {t(`health.burned.activities.${item.key}`)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="block">
-                  <span className="text-tv-small text-muted-foreground">Duration (minutes)</span>
+                  <span className="text-tv-small text-muted-foreground">{t("health.burned.duration")}</span>
                   <input
                     type="number"
                     min={1}
@@ -733,7 +741,7 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                   const isSelected = selectedBurnIndices.includes(index);
                   return (
                     <div
-                      key={`${entry.label}-${index}`}
+                      key={`${entry.key}-${index}`}
                       role="button"
                       tabIndex={0}
                       aria-pressed={isSelected}
@@ -751,22 +759,25 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                       }`}
                     >
                       <span>
-                        {entry.label} <span className="text-muted-foreground">({entry.minutes} min)</span>
+                        {t(`health.burned.activities.${entry.key}`)}{" "}
+                        <span className="text-muted-foreground">
+                          ({entry.minutes} {t("units.min")})
+                        </span>
                       </span>
                       <div className="flex items-center gap-3">
                         <span>
-                          {Math.round((entry.met * 3.5 * weight) / 200 * entry.minutes)} kcal
+                          {Math.round((entry.met * 3.5 * weight) / 200 * entry.minutes)} {t("units.kcal")}
                         </span>
                       </div>
                     </div>
                   );
                 })}
                 {burnList.length === 0 && (
-                  <div className="text-sm text-muted-foreground">Belum ada aktivitas ditambahkan.</div>
+                  <div className="text-sm text-muted-foreground">{t("health.burned.none")}</div>
                 )}
               </div>
               <div className="bg-muted rounded-lg p-4">
-                <p className="text-tv-small text-muted-foreground">Total Calories Burned</p>
+                <p className="text-tv-small text-muted-foreground">{t("health.burned.total")}</p>
                 <p className="text-tv-title font-bold text-primary">{Math.round(totalBurned)}</p>
               </div>
 
@@ -778,9 +789,9 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
                     ? "h-12 px-6 bg-rose-500/90 text-white hover:bg-rose-500"
                     : "h-12 w-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xl"
                 }`}
-                title={hasBurnSelection ? "Hapus aktivitas terpilih" : "Tambah Aktivitas"}
+                title={hasBurnSelection ? t("health.burned.removeSelected") : t("health.burned.addActivity")}
               >
-                {hasBurnSelection ? "Hapus" : "+"}
+                {hasBurnSelection ? t("health.burned.remove") : "+"}
               </button>
             </div>
           )}
@@ -790,22 +801,22 @@ const HealthMetricsContent: React.FC<HealthMetricsContentProps> = ({ embedded = 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {heartZones.map((zone) => (
                   <div key={zone.label} className="bg-muted rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-tv-small text-muted-foreground">{zone.label}</p>
-                      <p className="text-tv-body font-semibold">
-                        {zone.min} - {zone.max} BPM
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">{zone.desc}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-tv-small text-muted-foreground">{zone.label}</p>
+                    <p className="text-tv-body font-semibold">
+                      {zone.min} - {zone.max} {t("units.bpm")}
+                    </p>
                   </div>
-                ))}
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-tv-small text-muted-foreground">Maximum Heart Rate</p>
-                <p className="text-tv-title font-bold text-primary">{220 - age} BPM</p>
-              </div>
+                  <p className="text-xs text-muted-foreground mt-2">{zone.desc}</p>
+                </div>
+              ))}
             </div>
-          )}
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-tv-small text-muted-foreground">{t("health.heart.maximum")}</p>
+              <p className="text-tv-title font-bold text-primary">{220 - age} {t("units.bpm")}</p>
+            </div>
+          </div>
+        )}
         </div>
       </main>
     </div>
@@ -825,3 +836,9 @@ export const HealthMetricsEmbedded: React.FC = () => (
 );
 
 export default HealthMetrics;
+
+
+
+
+
+
